@@ -7,6 +7,10 @@ library(glue)
 library(tidyverse)
 library(lme4)
 
+# create map
+source("~/Documents/GitHub/BirdMigrationSpeed/map.R")
+rm(list= ls()[!(ls() %in% c('rr'))])
+
 # import data ---------------------------
 BIRDDATA_PATH <- glue("data/arrival_master_2020-07-21.csv") # may not be the most current data file - but what i first found
 GREENDATA_PATH <- glue("data/MidGreenup_2020-08-06-forest.csv")
@@ -82,7 +86,6 @@ for (yr in 2002:2017){
   }
 }
 
-# update the data.frame ------------------------
 velocity <- data.frame(species = velocity[,1], 
                        year = as.numeric(velocity[,2]),
                        cell = velocity[,3],
@@ -90,6 +93,7 @@ velocity <- data.frame(species = velocity[,1],
                        vArrMag = as.numeric(velocity[,5]),  # magnitude
                        vArrAng = as.numeric(velocity[,6]))  # angle
 
+# calculate velocity for green up -------------
 velocityG <- data.frame(year = c(), cell = c(), N = c(), vArrMag = c(),vGrMag = c())
 
 for(a in 2002:2017){
@@ -115,13 +119,13 @@ for(a in 2002:2017){
   }
 }
 
-# calculate velocity for green up
 velocityG <- data.frame(year = as.numeric(velocityG[,1]),
                         cell = velocityG[,2],
                         NGr = as.numeric(velocityG[,3]),
                         vGrMag = as.numeric(velocityG[,4]),
                         vGrAng = as.numeric(velocityG[,5]))
 
+# merge green up and bird velocity data
 all <- merge(bird, greenup[ ,c("year","cell","gr_mn","gr_ncell")], all.x = TRUE)
 all <- merge(all, velocity, all.x = TRUE)
 all <- merge(all, velocityG, all.x = TRUE)
@@ -157,7 +161,7 @@ lmer(data = final, vArrMag ~ vGrMag + (1|cell))
 lmer(data = final, vArrMag ~ vGrMag + (1|cell) + (1|species))
 lm(data = final, vGrMag ~ cell_lat)
 
-## --------------------------------
+# plot velocity for species   --------------------------------
 velocity$cell <- as.numeric(velocity$cell)
 preds <- left_join(velocity, cells, by= "cell")
 preds$ang <- NA
@@ -165,17 +169,6 @@ for(i in 1:nrow(preds)){
   if((360 - preds$vArrAng[i] + 90)>360) {preds$ang[i] = (360 - preds$vArrAng[i] + 90 - 360)}
   if((360 - preds$vArrAng[i] + 90)<360) {preds$ang[i] = (360 - preds$vArrAng[i] + 90)}
 }
-
-sps <- "Vireo_olivaceus" #"Tachycineta_bicolor"
-
-preds2 <- preds %>% 
-  filter(species == sps)
-
-cell_sps <- sort(unique(preds2$cell))
-
-preds3 <- as.data.frame(matrix(data = NA, ncol = 7, nrow = length(cell_sps)))
-colnames(preds3) <- c("species","year","cell","cell_lng","cell_lat","mag","ang")
-preds3$species <- sps
 
 mag_mean <- function(magnitudes){
   magv <- magnitudes
@@ -189,117 +182,142 @@ ang_mean <- function(angles){
   return(angm)
 }
 
-for(i in 1:length(cell_sps)){
-  celll <- cell_sps[i]
-  pred_loop <- preds2 %>% filter(cell == celll)
-  if(nrow(pred_loop) == 1) {
-    preds3$year[i] <- pred_loop$year
-    preds3$cell[i] <- pred_loop$cell
-    preds3$mag[i] <- pred_loop$vArrMag
-    preds3$ang[i] <- pred_loop$vArrAng
-    preds3$cell_lng[i] <- pred_loop$cell_lng
-    preds3$cell_lat[i] <- pred_loop$cell_lat
-  } else {
-    preds3$year[i] <- pred_loop$year[1]
-    preds3$cell[i] <- pred_loop$cell[1]
-    preds3$mag[i] <- mag_mean(pred_loop$vArrMag)
-    preds3$ang[i] <- ang_mean(pred_loop$vArrAng)
-    preds3$cell_lng[i] <- pred_loop$cell_lng[1]
-    preds3$cell_lat[i] <- pred_loop$cell_lat[1]
+plot_mapvel <- function(sps,year){
+
+  if(year == "all") {preds2 <- preds %>% 
+    filter(species == sps)}
+  
+  if(year != "all") {preds2 <- preds %>% 
+    filter(species == sps,
+           year == year)}
+  
+  cell_sps <- sort(unique(preds2$cell))
+  
+  preds3 <- as.data.frame(matrix(data = NA, ncol = 7, nrow = length(cell_sps)))
+  colnames(preds3) <- c("species","year","cell","cell_lng","cell_lat","mag","ang")
+  
+  for(i in 1:length(cell_sps)){
+    celll <- cell_sps[i]
+    pred_loop <- preds2 %>% filter(cell == celll)
+    if(nrow(pred_loop) == 1) {
+      preds3$year[i] <- pred_loop$year
+      preds3$cell[i] <- pred_loop$cell
+      preds3$mag[i] <- pred_loop$vArrMag
+      preds3$ang[i] <- pred_loop$vArrAng
+      preds3$cell_lng[i] <- pred_loop$cell_lng
+      preds3$cell_lat[i] <- pred_loop$cell_lat
+    } else {
+      preds3$year[i] <- pred_loop$year[1]
+      preds3$cell[i] <- pred_loop$cell[1]
+      preds3$mag[i] <- mag_mean(pred_loop$vArrMag)
+      preds3$ang[i] <- ang_mean(pred_loop$vArrAng)
+      preds3$cell_lng[i] <- pred_loop$cell_lng[1]
+      preds3$cell_lat[i] <- pred_loop$cell_lat[1]
+    }
   }
+  
+  preds3$species <- sps
+  
+  preds3 <- preds3[which(preds3$mag < 10000),]
+  preds3 <- preds3 %>% 
+    mutate(
+      #x = cell_lng + (cos(ang) * log(mag)),
+      #y = cell_lat + (sin(ang) * log(mag))
+      x = cell_lng + log((mag)) * cos(ang * pi / 180),
+      y = cell_lat + log((mag)) * sin(ang * pi / 180)
+    )
+  
+  rr +
+    geom_segment(data = preds3, aes(x = cell_lng, y = cell_lat, 
+                                    xend = x, yend = y,
+                                    group = cell, colour = "red"),
+                 arrow = arrow(length = unit(0.1, "cm")), size = 0.5) +
+    ggtitle(glue("{sps} {year}"))
 }
 
-preds3 <- preds3[which(preds3$mag < 10000),]
-preds3 <- preds3 %>% 
-  mutate(
-    x2 = cell_lng + (cos(ang) * (mag)/10000),
-    y2 = cell_lat + (sin(ang) * (mag)/10000),
-    x = cell_lng + log((mag)) * cos(ang * pi / 180),
-    y = cell_lat + log((mag)) * sin(ang * pi / 180)
-  )
+sps <- "Hirundo_rustica" # "Tachycineta_bicolor"
+year <- 2012 # "all"
 
-rr +
-  geom_segment(data = preds3, aes(x = cell_lng, y = cell_lat, 
-                                  xend = x, yend = y,
-                                  group = cell, colour = "red"),
-               arrow = arrow(length = unit(0.1, "cm")), size = 0.5)
+plot_mapvel(sps,year)
 
-plot(rbind(preds3$cell_lng,preds3$x), rbind(preds3$y,preds3$cell_lat), col = "white") #, xlim = c(-120,-40), ylim = c(15,70))
-arrows(x0=preds3$cell_lng, y0=preds3$cell_lat, x1=preds3$x, y1=preds3$y ,col= 'red', length = 0.075)
-#arrows(x0=preds3$cell_lng, y0=preds3$cell_lat, x1=preds3$x2, y1=preds3$y2 ,col= 'blue', length = 0.075)
+# plot(rbind(preds3$cell_lng,preds3$x), rbind(preds3$y,preds3$cell_lat), col = "white") #, xlim = c(-120,-40), ylim = c(15,70))
+# arrows(x0=preds3$cell_lng, y0=preds3$cell_lat, x1=preds3$x, y1=preds3$y ,col= 'red', length = 0.075)
+# arrows(x0=preds3$cell_lng, y0=preds3$cell_lat, x1=preds3$x2, y1=preds3$y2 ,col= 'blue', length = 0.075)
 
+# plot velocity for green up   --------------------------------
+velocityG$cell <- as.numeric(velocityG$cell)
+velG <- left_join(velocityG, cells, by= "cell")
+velG$ang <- NA
+for(i in 1:nrow(velG)){
+  if((360 - velG$vGrAng[i] + 90)>360) {velG$ang[i] = (360 - velG$vGrAng[i] + 90 - 360)}
+  if((360 - velG$vGrAng[i] + 90)<360) {velG$ang[i] = (360 - velG$vGrAng[i] + 90)}
+}
 
-saveRDS(a, file = "example_tachy.rds")
+mag_mean <- function(magnitudes){
+  magv <- magnitudes
+  magm <- sum(magv)/length(magv)
+  return(magm)
+}
 
-rr +
-  geom_segment(data = preds3[1:4,], aes(x = cell_lng, y = cell_lat, 
-                                        xend = x, yend = y,
-                                        group = cell, colour = "red"),
-               arrow = arrow(length = unit(0.1, "cm")), size = 0.5) +
-  geom_segment(data = preds3[5,], aes(x = cell_lng, y = cell_lat, 
-                                      xend = x, yend = y,
-                                      group = cell, colour = "blue"),
-               arrow = arrow(length = unit(0.1, "cm")), size = 0.5)
+ang_mean <- function(angles){
+  angv <- angles
+  angm <- sum(angv)/length(angv)
+  return(angm)
+}
 
+plot_mapvel <- function(year){
+  
+  if(year == "all") {velG2 <- velG}
+  
+  if(year != "all") {velG2 <- velG %>% 
+    filter(year == year)}
+  
+  cell_gr <- sort(unique(velG2$cell))
+  
+  velG3 <- as.data.frame(matrix(data = NA, ncol = 6, nrow = length(cell_gr)))
+  colnames(velG3) <- c("year","cell","cell_lng","cell_lat","mag","ang")
+  
+  for(i in 1:length(cell_gr)){
+    celll <- cell_gr[i]
+    pred_loop <- velG2 %>% filter(cell == celll)
+    if(nrow(pred_loop) == 1) {
+      velG3$year[i] <- pred_loop$year
+      velG3$cell[i] <- pred_loop$cell
+      velG3$mag[i] <- pred_loop$vGrMag
+      velG3$ang[i] <- pred_loop$vGrAng
+      velG3$cell_lng[i] <- pred_loop$cell_lng
+      velG3$cell_lat[i] <- pred_loop$cell_lat
+    } else {
+      velG3$year[i] <- pred_loop$year[1]
+      velG3$cell[i] <- pred_loop$cell[1]
+      velG3$mag[i] <- mag_mean(pred_loop$vGrMag)
+      velG3$ang[i] <- ang_mean(pred_loop$vGrAng)
+      velG3$cell_lng[i] <- pred_loop$cell_lng[1]
+      velG3$cell_lat[i] <- pred_loop$cell_lat[1]
+    }
+  }
+  
+  velG3 <- velG3[which(velG3$mag < 10000),]
+  velG3 <- velG3 %>% 
+    mutate(
+      #x = cell_lng + (cos(ang) * log(mag)),
+      #y = cell_lat + (sin(ang) * log(mag))
+      x = cell_lng + log((mag)) * cos(ang * pi / 180),
+      y = cell_lat + log((mag)) * sin(ang * pi / 180)
+    )
+  
+  rr +
+    geom_segment(data = velG3, aes(x = cell_lng, y = cell_lat, 
+                                    xend = x, yend = y,
+                                    group = cell), colour = "darkgreen",
+                 arrow = arrow(length = unit(0.1, "cm")), size = 0.5) +
+    ggtitle(glue("Green up {year}"))
+}
 
-
-rr +
-  geom_segment(data = preds3[1:4,], aes(x = cell_lng, y = cell_lat, 
-                                        xend = x2, yend = y2,
-                                        group = cell, colour = "red"),
-               arrow = arrow(length = unit(0.1, "cm")), size = 0.5) +
-  geom_segment(data = preds3[5,], aes(x = cell_lng, y = cell_lat, 
-                                      xend = x2, yend = y2,
-                                      group = cell, colour = "blue"),
-               arrow = arrow(length = unit(0.1, "cm")), size = 0.5)
-
-x <- 1
-plot(rbind(preds3$cell_lng,preds3$x), rbind(preds3$y,preds3$cell_lat), col = "white") #, xlim = c(-120,-40), ylim = c(15,70))
-arrows(x0=preds3$cell_lng[1:x], y0=preds3$cell_lat[1:x], x1=preds3$x[1:x], y1=preds3$y[1:x] ,col= 'red', length = 0.075)
-arrows(x0=preds3$cell_lng[1:x], y0=preds3$cell_lat[1:x], x1=preds3$x2[1:x], y1=preds3$y2[1:x] ,col= 'blue', length = 0.075)
-
-preds3[x,]
-
-rr +
-  geom_segment(data = preds3[x,], aes(x = cell_lng, y = cell_lat, 
-                                      xend = x, yend = y,
-                                      group = cell), colour = "red",
-               arrow = arrow(length = unit(0.1, "cm")), size = 0.5) +
-  geom_segment(data = preds3[x,], aes(x = cell_lng, y = cell_lat, 
-                                      xend = x2, yend = y2,
-                                      group = cell), colour = "blue",
-               arrow = arrow(length = unit(0.1, "cm")), size = 0.5)
-
-
-
-
-
-
-preds4 <- preds %>% 
-  mutate(
-    mag = vArrMag,
-    x = cell_lng + (cos(ang) * (mag/500)),
-    y = cell_lat + (sin(ang) * (mag/500))
-    #x = cell_lng + ((mag-50)/3) * cos(45),
-    #y = cell_lat + ((mag-50)/3) * sin(45)
-  )
-
-preds4 <- preds4 %>% filter(species == unique(preds$species)[19])
-
-rr +
-  geom_segment(data = preds4, aes(x = cell_lng, y = cell_lat, 
-                                  xend = x, yend = y,
-                                  group = cell, colour = "red"),
-               arrow = arrow(length = unit(0.1, "cm")), size = 0.5) #+
-#facet_wrap(~species)
-
-plot(rbind(preds4$cell_lng,preds4$x), rbind(preds4$y,preds4$cell_lat), col = "white") #, xlim = c(-120,-40), ylim = c(15,70))
-segments(x0=preds4$cell_lng, y0=preds4$cell_lat, x1=preds4$x, y1=preds4$y ,col= 'red')
+plot_mapvel(2002)
 
 
-
-
-
+# correlation between green up and bird velocity  -----------------
 (gm1 <- lmer(data = final, vArrMag ~ vGrMag + (1|cell) + (1|species) + (1|year)))
 newdata1 <- unique(final[,c("cell","vGrMag")])
 newdata1 <- newdata1 %>% 
@@ -320,55 +338,4 @@ newdata2 <- cbind(newdata2, ang)
 
 cells2 <- unique(sort(rbind(newdata1$cell,newdata2$cell)))
 preds <- left_join(newdata1,newdata2, by = "cell")
-
-# plot -----------
-
-library(ggplot2)
-library(grid)
-
-# to plot I need xy coordinates, direction and intensity
-preds <- left_join(preds, cells, by= "cell")
-
-preds <- preds %>% 
-  mutate(
-    x = cell_lng + (mag)/30 * cos(ang),
-    y = cell_lat + (mag)/30 * sin(ang)
-  )
-
-preds <- left_join(preds, cells, by = "cell")
-
-rr +
-  geom_segment(data = preds, aes(x = cell_lng, y = cell_lat, 
-                                 xend = x, yend = y,
-                                 group = cell, colour = "red"),
-               arrow = arrow(length = unit(0.1, "cm")), size = 0.25)
-
-
-plot(preds2$cell_lat, preds2$mag)
-plot(preds2$cell_lat, preds2$ang)
-
-
-
-
-
-## plot some fake angles to chec if I am lotting right
-
-
-ggplot() +
-  geom_segment(data = preds, aes(x=cell_lng, y=cell_lat),
-               xend=x, yend=y,arrow=arrow())
-
-ggplot(preds, aes(x = cell_lng, y = cell_lat)) +
-  geom_segment(aes(xend = x, yend = y),
-               arrow = arrow(length = unit(0.1, "cm")), size = 0.25)
-
-ggplot() +
-  geom_segment(data = preds, aes(x = cell_lng, y = cell_lat, xend = x, yend = y),
-               arrow = arrow(length = unit(0.1, "cm")), size = 0.25)
-
-
-
-
-
-
 
