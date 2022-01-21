@@ -23,7 +23,7 @@ cellnumbs <- data.frame(cell = tc,
                         cell2 = seq(1,length(tc)))
 
 arr_master <- dplyr::left_join(arr_master, cellnumbs, by = "cell") %>% 
-  select(-cell) %>% 
+  dplyr::select(-cell) %>% 
   rename(cell = cell2)
 
 arr_master3 <- arr_master2 <- arr_master
@@ -77,7 +77,7 @@ rm(worldmap)
 
 TAB <- readRDS("MigSen/Data/data_sensi.RDS")
 TAB <- left_join(TAB, cellnumbs, by="cell") %>% 
-  select(-cell) %>% 
+  dplyr::select(-cell) %>% 
   rename(cell = cell2)
 
 load("MigSen/Data/species_Grid.RData")
