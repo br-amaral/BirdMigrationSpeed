@@ -1,0 +1,214 @@
+
+library(shiny)
+library(shinythemes)
+library(shinydashboard)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(viridis)
+library(maps)
+library(mapproj)
+library(robustHD)
+library(tidyverse)
+library(geosphere)
+library(shinyBS)
+library(zip)
+
+##  Bird arrival date map - TAB 2 ----------------------------
+## load data
+arr_master <- readRDS("MigSen/Data/data_arr.RDS")
+
+tc <- sort(unique(arr_master$cell))
+cellnumbs <- data.frame(cell = tc, 
+                        cell2 = seq(1,length(tc)))
+
+arr_master <- dplyr::left_join(arr_master, cellnumbs, by = "cell") %>% 
+  select(-cell) %>% 
+  rename(cell = cell2)
+
+arr_master3 <- arr_master2 <- arr_master
+arr_master2 <- arr_master2 %>% 
+  rename(year2 = year)
+
+## load the picture that corresponds to this combination of this arguments
+picplot <- function(year, sps, mod, rang){
+  name <- paste(year, sps, mod, rang, sep="_")
+  return(name) 
+}
+
+##  Green-up map - TAB 3 ----------------------------
+## load the picture that corresponds to this combination of this arguments
+picgreen <- function(year){
+  name <- paste(year)
+  return(name) 
+}
+
+##  Sensitivity analyses - TAB 4 ----------------------------
+# load maps and plot formatting
+worldmap <- ggplot2::map_data("world")
+pp <- ggplot(data = worldmap, aes(x = long, y = lat, 
+                                  group = group)) +
+  geom_polygon(fill = alpha('black', 0.1), color = NA) +
+  coord_map("ortho", orientation = c(35, -80, 0),
+            xlim = c(-110, -50), ylim = c(21, 66)) +
+  #theme_bw() +
+  theme(panel.grid.major = element_line(color = alpha('black', 0.2),
+                                        size = 0.5),
+        panel.ontop = TRUE,
+        panel.background = element_rect(fill = NA),
+        legend.title=element_text(size=13),
+        legend.spacing.y = grid::unit(0.5, "cm"),
+        legend.text=element_text(size=rel(1.2)),
+        legend.key.height=grid::unit(0.9,"cm"),
+        legend.title.align=0.5,
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+  xlab('Longitude') +
+  ylab('Latitude') +
+  labs(fill = 'Sensitivity\n(Days/Day)') +
+  geom_path(aes(x = long, y = lat, group = group),
+            alpha = 0.4, color = 'black')
+
+rm(worldmap)
+
+TAB <- readRDS("MigSen/Data/data_sensi.RDS")
+TAB <- left_join(TAB, cellnumbs, by="cell") %>% 
+  select(-cell) %>% 
+  rename(cell = cell2)
+
+load("MigSen/Data/species_Grid.RData")
+
+# sensitivity map
+doplot <- function(species) {
+  arr_f <- TAB[which(TAB$species == species),]
+  
+  #min/max for plotting using output data
+  MIN <- round((floor((min(arr_f$beta_mean, na.rm = TRUE))*10)/10), 1)
+  MAX <- round((ceiling((max(arr_f$beta_mean, na.rm = TRUE))*10)/10), 1)
+  
+  # get hex grid for species
+  cell_grid <- get(paste('cell_grid', species, sep="_")) 
+  
+  #merge hex spatial data with HM data
+  to_plt <- dplyr::inner_join(arr_f, cell_grid, by = 'cell')
+  
+  pp +
+    geom_polygon(data = to_plt, aes(x = long, 
+                                    y = lat, group = group, 
+                                    fill = beta_mean), alpha = 0.5) +
+    geom_path(data = to_plt, aes(x = long, 
+                                 y = lat, group = group), 
+              #alpha = 0.4, 
+              color = 'black') + 
+    scale_fill_viridis(option="magma",limits = c(MIN, MAX)) 
+  
+}
+
+# Line plot
+# all species
+sensim_df <- readRDS('MigSen/Data/fit_df_tab5.rds')
+qq <- ggplot(sensim_df, aes(lat, sensim, group = species)) +
+  geom_line(size = 1, col = "gray") +
+  theme_classic() +
+  xlab("Latitude (Degrees)") +
+  ylab("Sensitivity (Days / Day)") +
+  theme(axis.title.y = element_text(size = rel(0.9), angle = 90, margin = margin(r = 10)),
+        axis.title.x = element_text(size = rel(0.9), angle = 00),
+        axis.text=element_text(size=8, colour = "black")
+        #axis.text.y = element_text(angle=90)
+  ) 
+# add species of interest on top 
+doline <- function(species){
+  sensim_df_f <- sensim_df[which(sensim_df$species == species),]
+  qq + geom_line(data = sensim_df_f, 
+                 #alpha = 0.8,
+                 size = 1.1,
+                 color = 'black')
+}
+
+##  Interannual variation - TAB 4 ----------------------------
+f1a_green <- 'indianred'
+f1a_bird <- '#2686A0'
+
+## Range map
+ran_sp <- arr_master3 
+
+#create hex grid
+cell_grid_tab4 <- readRDS("MigSen/Data/master_cell_grid.rds") ## load grid - package not on CRAN
+for_gr <- readRDS('MigSen/Data/for_green-up_dl.rds')
+
+for_gr2 <- left_join(for_gr, cellnumbs, by = "cell") %>% 
+  select(-cell) %>% 
+  rename(cell = cell2)
+
+#merge hex spatial data with HM data
+ran_sp <- left_join(ran_sp, cell_grid_tab4, by = 'cell')%>%  
+  transmute(species,
+            cell,
+            cell_lat,cell_lng,
+            lat,long)
+
+ran_sp3 <- distinct(ran_sp)
+ran_sp3$species <- NA
+ran_sp3 <- distinct(ran_sp3)
+
+dat.lm <- dat.temp[dat.temp$cell %in% cells[c(adj[[b]], b),1], c("cell_lat","cell_lng","arr_GAM_mean", "cell")]
+
+rr <- pp +
+  geom_polygon(data = cell_grid_tab4, aes(x = long, y = lat),
+               fill="white",
+               inherit.aes = FALSE, alpha = 1) +
+  geom_path(data = cell_grid_tab4,
+            aes(x = long,y = lat, group = cell),
+            inherit.aes = FALSE,
+            color = 'black', alpha = 0.2) +
+  annotate('text', x = ran_sp3$cell_lng, y = ran_sp3$cell_lat,
+           label = ran_sp3$cell, col = 'black', alpha = 0.9,
+           size = 3) #+
+#  geom_segment(data = preds, aes(x=cell_lng, y=cell_lat),
+#                          xend=x, yend=y,arrow=arrow())
+
+
+
+
+
+  annotate('text', x = dat.lm$cell_lng, y = dat.lm$cell_lat,
+           label = dat.lm$cell, col = 'black', alpha = 0.9,
+           size = 3) 
+
+
+
+ggplot(wind, aes(x=x, y=y, xend=x+u*scaler, yend=y+v*scaler)) + geom_segment(arrow=arrow())
+
+
+
+## plot velocity
+x=seq(10,15,by=0.25)
+y=seq(40,50,by=0.25)
+u=matrix(runif(length(x)*length(y),-2,3),nrow=length(x),ncol=length(y))
+v=matrix(runif(length(x)*length(y),-2,3),nrow=length(x),ncol=length(y))
+#note that I corrected these
+
+#melt for plotting
+library(reshape2)
+u <- melt(u,value.name = "u")
+v <- melt(v,value.name = "v")
+wind <- merge(u, v)
+wind$x <- x[wind[,1]]
+wind$y <- y[wind[,2]]
+
+
+#plot
+library(ggplot2)
+library(grid)
+scaler <- 1
+
+p <- ggplot(wind, aes(x=x, y=y, xend=x+u*scaler, yend=y+v*scaler)) + geom_segment(arrow=arrow())
+print(p)
+
+
+
