@@ -170,18 +170,6 @@ for(i in 1:nrow(preds)){
   if((360 - preds$vArrAng[i] + 90)<360) {preds$ang[i] = (360 - preds$vArrAng[i] + 90)}
 }
 
-mag_mean <- function(magnitudes){
-  magv <- magnitudes
-  magm <- sum(magv)/length(magv)
-  return(magm)
-}
-
-ang_mean <- function(angles){
-  angv <- angles
-  angm <- sum(angv)/length(angv)
-  return(angm)
-}
-
 plot_mapvel <- function(sps,year){
 
   if(year == "all") {preds2 <- preds %>% 
@@ -193,8 +181,17 @@ plot_mapvel <- function(sps,year){
   
   cell_sps <- sort(unique(preds2$cell))
   
+  preds2 <- preds2 %>% 
+    filter(vArrMag < 10000) %>% 
+    mutate(
+      #x = cell_lng + (cos(ang) * log(mag)),
+      #y = cell_lat + (sin(ang) * log(mag))
+      x = cell_lng + log((vArrMag)) * cos(ang * pi / 180),
+      y = cell_lat + log((vArrMag)) * sin(ang * pi / 180)
+    )
+  
   preds3 <- as.data.frame(matrix(data = NA, ncol = 7, nrow = length(cell_sps)))
-  colnames(preds3) <- c("species","year","cell","cell_lng","cell_lat","mag","ang")
+  colnames(preds3) <- c("species","year","cell","cell_lng","cell_lat","x","y")
   
   for(i in 1:length(cell_sps)){
     celll <- cell_sps[i]
@@ -202,30 +199,22 @@ plot_mapvel <- function(sps,year){
     if(nrow(pred_loop) == 1) {
       preds3$year[i] <- pred_loop$year
       preds3$cell[i] <- pred_loop$cell
-      preds3$mag[i] <- pred_loop$vArrMag
-      preds3$ang[i] <- pred_loop$vArrAng
       preds3$cell_lng[i] <- pred_loop$cell_lng
       preds3$cell_lat[i] <- pred_loop$cell_lat
+      preds3$x[i] <- pred_loop$x
+      preds3$y[i] <- pred_loop$y
     } else {
       preds3$year[i] <- pred_loop$year[1]
       preds3$cell[i] <- pred_loop$cell[1]
-      preds3$mag[i] <- mag_mean(pred_loop$vArrMag)
-      preds3$ang[i] <- ang_mean(pred_loop$vArrAng)
       preds3$cell_lng[i] <- pred_loop$cell_lng[1]
       preds3$cell_lat[i] <- pred_loop$cell_lat[1]
+      preds3$x[i] <- mean(x = pred_loop$x)
+      preds3$y[i] <- mean(x = pred_loop$y)
     }
   }
   
   preds3$species <- sps
   
-  preds3 <- preds3[which(preds3$mag < 10000),]
-  preds3 <- preds3 %>% 
-    mutate(
-      #x = cell_lng + (cos(ang) * log(mag)),
-      #y = cell_lat + (sin(ang) * log(mag))
-      x = cell_lng + log((mag)) * cos(ang * pi / 180),
-      y = cell_lat + log((mag)) * sin(ang * pi / 180)
-    )
   
   rr +
     geom_segment(data = preds3, aes(x = cell_lng, y = cell_lat, 
@@ -236,7 +225,7 @@ plot_mapvel <- function(sps,year){
 }
 
 sps <- "Hirundo_rustica" # "Tachycineta_bicolor"
-year <- 2012 # "all"
+year <-  "all"
 
 plot_mapvel(sps,year)
 
@@ -253,58 +242,44 @@ for(i in 1:nrow(velG)){
   if((360 - velG$vGrAng[i] + 90)<360) {velG$ang[i] = (360 - velG$vGrAng[i] + 90)}
 }
 
-mag_mean <- function(magnitudes){
-  magv <- magnitudes
-  magm <- sum(magv)/length(magv)
-  return(magm)
-}
-
-ang_mean <- function(angles){
-  angv <- angles
-  angm <- sum(angv)/length(angv)
-  return(angm)
-}
-
 plot_mapvel <- function(year){
   
   if(year == "all") {velG2 <- velG}
   
   if(year != "all") {velG2 <- velG %>% 
     filter(year == year)}
+ 
+  cell_G <- sort(unique(velG2$cell))
   
-  cell_gr <- sort(unique(velG2$cell))
-  
-  velG3 <- as.data.frame(matrix(data = NA, ncol = 6, nrow = length(cell_gr)))
-  colnames(velG3) <- c("year","cell","cell_lng","cell_lat","mag","ang")
-  
-  for(i in 1:length(cell_gr)){
-    celll <- cell_gr[i]
-    pred_loop <- velG2 %>% filter(cell == celll)
-    if(nrow(pred_loop) == 1) {
-      velG3$year[i] <- pred_loop$year
-      velG3$cell[i] <- pred_loop$cell
-      velG3$mag[i] <- pred_loop$vGrMag
-      velG3$ang[i] <- pred_loop$vGrAng
-      velG3$cell_lng[i] <- pred_loop$cell_lng
-      velG3$cell_lat[i] <- pred_loop$cell_lat
-    } else {
-      velG3$year[i] <- pred_loop$year[1]
-      velG3$cell[i] <- pred_loop$cell[1]
-      velG3$mag[i] <- mag_mean(pred_loop$vGrMag)
-      velG3$ang[i] <- ang_mean(pred_loop$vGrAng)
-      velG3$cell_lng[i] <- pred_loop$cell_lng[1]
-      velG3$cell_lat[i] <- pred_loop$cell_lat[1]
-    }
-  }
-  
-  velG3 <- velG3[which(velG3$mag < 10000),]
-  velG3 <- velG3 %>% 
+  velG2 <- velG2 %>% 
+    filter(vGrMag < 10000) %>% 
     mutate(
       #x = cell_lng + (cos(ang) * log(mag)),
       #y = cell_lat + (sin(ang) * log(mag))
-      x = cell_lng + log((mag)) * cos(ang * pi / 180),
-      y = cell_lat + log((mag)) * sin(ang * pi / 180)
+      x = cell_lng + log((vGrMag)) * cos(ang * pi / 180),
+      y = cell_lat + log((vGrMag)) * sin(ang * pi / 180)
     )
+  
+  velG3 <- as.data.frame(matrix(data = NA, ncol = 5, nrow = length(cell_G)))
+  colnames(velG3) <- c("cell","cell_lng","cell_lat","x","y")
+  
+  for(i in 1:length(cell_G)){
+    celll <- cell_G[i]
+    pred_loop <- velG2 %>% filter(cell == celll)
+    if(nrow(pred_loop) == 1) {
+      velG3$cell[i] <- pred_loop$cell
+      velG3$cell_lng[i] <- pred_loop$cell_lng
+      velG3$cell_lat[i] <- pred_loop$cell_lat
+      velG3$x[i] <- pred_loop$x
+      velG3$y[i] <- pred_loop$y
+    } else {
+      velG3$cell[i] <- pred_loop$cell[1]
+      velG3$cell_lng[i] <- pred_loop$cell_lng[1]
+      velG3$cell_lat[i] <- pred_loop$cell_lat[1]
+      velG3$x[i] <- mean(x = pred_loop$x)
+      velG3$y[i] <- mean(x = pred_loop$y)
+    }
+  }  
   
   rr +
     geom_segment(data = velG3, aes(x = cell_lng, y = cell_lat, 
