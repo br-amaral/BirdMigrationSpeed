@@ -34,18 +34,23 @@ x1 <- 2 + mag * cos(angle * pi / 180)
 y1 <- 1 + mag * sin(angle * pi / 180)
 segments(2, 1, as.numeric(x1), as.numeric(y1), lwd = 2)
 
-x2 <- 2 + 1 * cos(110 * pi / 180)
-y2 <- 1 + 1 * sin(110 * pi / 180)
+x2 <- 2 + 1 * cos(135 * pi / 180)
+y2 <- 1 + 1 * sin(135 * pi / 180)
 segments(2, 1, as.numeric(x2), as.numeric(y2), lwd = 2)
 
-angmax <- max(angle,110)
-angmin <- min(angle,110)
+angmax <- max(angle,135)
+angmin <- min(angle,153)
 anglem <- (abs(angmax - angmin)/2) + angmin
 magm <- sum(mag,1)/2
 
 xm <- 2 + magm * cos(anglem * pi / 180)
 ym <- 1 + magm * sin(anglem * pi / 180)
 segments(2, 1, as.numeric(xm), as.numeric(ym), lwd = 2, col = "red")
+
+xm2 <- mean(c(x1,x2))
+ym2 <- mean(c(y1,y2))
+segments(2, 1, as.numeric(xm2), as.numeric(ym2), lwd = 2, col = "blue")
+
 
 x3 <- 2 + 1.5 * cos(25 * pi / 180)
 y3 <- 1 + 1.5 * sin(25 * pi / 180)
