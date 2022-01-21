@@ -1,6 +1,4 @@
-# Object file
-*.o
-
-# Ada Library Information
-*.ali
 .Rproj.user
+.Rhistory
+.RData
+.Ruserdata
