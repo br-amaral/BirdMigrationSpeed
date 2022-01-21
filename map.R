@@ -1,7 +1,5 @@
 
-library(shiny)
-library(shinythemes)
-library(shinydashboard)
+
 library(dplyr)
 library(ggplot2)
 library(plotly)
@@ -11,8 +9,7 @@ library(mapproj)
 library(robustHD)
 library(tidyverse)
 library(geosphere)
-library(shinyBS)
-library(zip)
+
 
 ##  Bird arrival date map - TAB 2 ----------------------------
 ## load data
@@ -30,20 +27,6 @@ arr_master3 <- arr_master2 <- arr_master
 arr_master2 <- arr_master2 %>% 
   rename(year2 = year)
 
-## load the picture that corresponds to this combination of this arguments
-picplot <- function(year, sps, mod, rang){
-  name <- paste(year, sps, mod, rang, sep="_")
-  return(name) 
-}
-
-##  Green-up map - TAB 3 ----------------------------
-## load the picture that corresponds to this combination of this arguments
-picgreen <- function(year){
-  name <- paste(year)
-  return(name) 
-}
-
-##  Sensitivity analyses - TAB 4 ----------------------------
 # load maps and plot formatting
 worldmap <- ggplot2::map_data("world")
 pp <- ggplot(data = worldmap, aes(x = long, y = lat, 
@@ -156,8 +139,6 @@ ran_sp3 <- distinct(ran_sp)
 ran_sp3$species <- NA
 ran_sp3 <- distinct(ran_sp3)
 
-dat.lm <- dat.temp[dat.temp$cell %in% cells[c(adj[[b]], b),1], c("cell_lat","cell_lng","arr_GAM_mean", "cell")]
-
 rr <- pp +
   geom_polygon(data = cell_grid_tab4, aes(x = long, y = lat),
                fill="white",
@@ -169,46 +150,6 @@ rr <- pp +
   annotate('text', x = ran_sp3$cell_lng, y = ran_sp3$cell_lat,
            label = ran_sp3$cell, col = 'black', alpha = 0.9,
            size = 3) #+
-#  geom_segment(data = preds, aes(x=cell_lng, y=cell_lat),
-#                          xend=x, yend=y,arrow=arrow())
-
-
-
-
-
-  annotate('text', x = dat.lm$cell_lng, y = dat.lm$cell_lat,
-           label = dat.lm$cell, col = 'black', alpha = 0.9,
-           size = 3) 
-
-
-
-ggplot(wind, aes(x=x, y=y, xend=x+u*scaler, yend=y+v*scaler)) + geom_segment(arrow=arrow())
-
-
-
-## plot velocity
-x=seq(10,15,by=0.25)
-y=seq(40,50,by=0.25)
-u=matrix(runif(length(x)*length(y),-2,3),nrow=length(x),ncol=length(y))
-v=matrix(runif(length(x)*length(y),-2,3),nrow=length(x),ncol=length(y))
-#note that I corrected these
-
-#melt for plotting
-library(reshape2)
-u <- melt(u,value.name = "u")
-v <- melt(v,value.name = "v")
-wind <- merge(u, v)
-wind$x <- x[wind[,1]]
-wind$y <- y[wind[,2]]
-
-
-#plot
-library(ggplot2)
-library(grid)
-scaler <- 1
-
-p <- ggplot(wind, aes(x=x, y=y, xend=x+u*scaler, yend=y+v*scaler)) + geom_segment(arrow=arrow())
-print(p)
 
 
 
