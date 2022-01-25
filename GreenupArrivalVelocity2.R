@@ -16,7 +16,7 @@ BIRDDATA_PATH <- glue("data/arrival_master_2020-07-21.csv") # may not be the mos
 GREENDATA_PATH <- glue("data/MidGreenup_2020-08-06-forest.csv")
 
 bird1 <- read_csv(BIRDDATA_PATH) %>% 
-  filter(VALID_GAM == TRUE)
+  filter(VALID_GAM == TRUE) %>% filter(species == "Setophaga_discolor")
 bird1 <- bird1[,-1]
 
 greenup1 <- read_csv(GREENDATA_PATH) %>% 
@@ -61,7 +61,7 @@ for (yr in 2002:2017){
   for (spp in 1:length(spec)){
     dat.temp <- subset(bird, year == yr & species == spec[spp])
     for (b in 1:nrow(cells)){ # look at the neighbours of a cell
-      dat.lm <- dat.lm2 <- dat.temp[dat.temp$cell %in% cells[c(adj[[b]], b),1], c("cell_lat","cell_lng","arr_GAM_mean","cell")]   # get lat, long and Gam arrival mean
+      dat.lm <- dat.lm2 <- dat.temp[dat.temp$cell %in% c(adj[[b]], cells[b,1]), c("cell_lat","cell_lng","arr_GAM_mean","cell")]   # get lat, long and Gam arrival mean
       if(nrow(dat.lm) >= minNeigh) {  # validate that minimum data points available
         if(sum(!is.na(dat.lm$arr_GAM_mean)) >= minNeigh){
           #print(c(yr, spp, b))
@@ -125,42 +125,6 @@ velocityG <- data.frame(year = as.numeric(velocityG[,1]),
                         vGrMag = as.numeric(velocityG[,4]),
                         vGrAng = as.numeric(velocityG[,5]))
 
-# merge green up and bird velocity data
-all <- merge(bird, greenup[ ,c("year","cell","gr_mn","gr_ncell")], all.x = TRUE)
-all <- merge(all, velocity, all.x = TRUE)
-all <- merge(all, velocityG, all.x = TRUE)
-all$lag <- all$gr_mn - all$arr_GAM_mean
-
-cellspec <- unique(all[ ,c("cell","species")])
-
-final <- matrix(NA, 0, 27)
-
-for (a in 1:nrow(cellspec)){  # loop in a cell and species
-  dat.temp <- subset(all, cellspec[a,1] == cell & cellspec[a,2] == species)
-  if (nrow(dat.temp) >= 8){  # at least 8 years of data
-    Anom <- apply(dat.temp[,c(9,14,17,20,22)], 2, function(x) scale(log(x), scale = FALSE))
-    colnames(Anom) <- c("AnomDArr", "AnomDGr", "AnomVArr", "AnomVGr", "AnomLag")
-    dat.temp <- cbind(dat.temp, Anom)
-    final <- rbind(final, dat.temp)
-  }
-}
-
-# merge lat and lon data for cells back in
-#vel <- merge(velocity, cells, by.x = c("cell"), by.y = c("cell"))
-#vel$cell_lat <- scale(vel$cell_lat, scale = FALSE)  #scale lat for regression analysis
-
-final$cell_lat <- scale(final$cell_lat, scale = FALSE)  #scale lat for regression analysis
-
-final <- final %>% 
-  drop_na(vArrMag) %>% 
-  drop_na(vArrAng) %>% 
-  drop_na(vGrMag) %>% 
-  drop_na(vGrAng)
-
-lmer(data = final, vArrMag ~ vGrMag + (1|cell))
-lmer(data = final, vArrMag ~ vGrMag + (1|cell) + (1|species))
-lm(data = final, vGrMag ~ cell_lat)
-
 # plot velocity for species   --------------------------------
 velocity$cell <- as.numeric(velocity$cell)
 preds <- left_join(velocity, cells, by= "cell")
@@ -215,16 +179,34 @@ plot_mapvel <- function(sps,year){
   
   preds3$species <- sps
   
-  
   rr +
     geom_segment(data = preds3, aes(x = cell_lng, y = cell_lat, 
                                     xend = x, yend = y,
                                     group = cell, colour = "red"),
                  arrow = arrow(length = unit(0.1, "cm")), size = 0.5) +
-    ggtitle(glue("{sps} {year}"))
+    ggtitle(glue("{sps} {year}")) +
+    theme_bw() +
+    theme(legend.position = "none",
+          panel.grid.major = element_line(color = alpha('black', 0.2),
+                                          size = 0.5),
+          panel.ontop = TRUE,
+          plot.title = element_text(hjust = 0.5),
+          panel.background = element_rect(fill = NA),
+          legend.title=element_text(size=13),
+          legend.spacing.y = grid::unit(0.5, "cm"),
+          legend.text=element_text(size=rel(1.2)),
+          legend.key.height=grid::unit(0.9,"cm"),
+          legend.title.align=0.5,
+          axis.title.x=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank(),
+          axis.title.y=element_blank(),
+          axis.text.y=element_blank(),
+          axis.ticks.y=element_blank(),
+          panel.border = element_blank())
 }
 
-sps <- "Hirundo_rustica" # "Tachycineta_bicolor"
+sps <- "Setophaga_discolor" #"Hirundo_rustica" # "Tachycineta_bicolor"
 year <-  "all"
 
 plot_mapvel(sps,year)
@@ -242,7 +224,7 @@ for(i in 1:nrow(velG)){
   if((360 - velG$vGrAng[i] + 90)<360) {velG$ang[i] = (360 - velG$vGrAng[i] + 90)}
 }
 
-plot_mapvel <- function(year){
+plot_mapvelG <- function(year){
   
   if(year == "all") {velG2 <- velG}
   
@@ -289,28 +271,143 @@ plot_mapvel <- function(year){
     ggtitle(glue("Green up {year}"))
 }
 
-plot_mapvel(2002)
+plot_mapvelG(2002)
 
 
 # correlation between green up and bird velocity  -----------------
-(gm1 <- lmer(data = final, vArrMag ~ vGrMag + (1|cell) + (1|species) + (1|year)))
-newdata1 <- unique(final[,c("cell","vGrMag")])
-newdata1 <- newdata1 %>% 
-  group_by(cell) %>% 
-  summarise(mean(vGrMag)) 
-colnames(newdata1)[2] <- "vGrMag"
-mag <- predict(gm1,newdata1,re.form=NA) # new data, level-0
-newdata1 <- cbind(newdata1, mag)
+# merge green up and bird velocity data
+all <- merge(bird, greenup[ ,c("year","cell","gr_mn","gr_ncell")], all.x = TRUE)
+all <- merge(all, velocity, all.x = TRUE)
+all <- merge(all, velocityG, all.x = TRUE)
+all$lag <- all$gr_mn - all$arr_GAM_mean
 
-(gm2 <- lmer(data = final, vArrAng ~ vGrAng + (1|cell) + (1|species) + (1|year)))
-newdata2 <- unique(final[,c("cell","vGrAng")])
-newdata2 <- newdata2 %>% 
-  group_by(cell) %>% 
-  summarise(mean(vGrAng))
-colnames(newdata2)[2] <- "vGrAng"
-ang <- predict(gm2,newdata2,re.form=NA) # new data, level-0
-newdata2 <- cbind(newdata2, ang)
+all$angB <- all$angG <- NA
 
-cells2 <- unique(sort(rbind(newdata1$cell,newdata2$cell)))
-preds <- left_join(newdata1,newdata2, by = "cell")
+for(i in 1:nrow(all)){
+  ifelse(((360 - all$vArrAng[i] + 90)>360),all$angB[i] <- (360 - all$vArrAng[i] + 90 - 360),all$angB[i] <- (360 - all$vArrAng[i] + 90))
+  ifelse(((360 - all$vGrAng[i] + 90)>360), all$angG[i] <- (360 - all$vGrAng[i] + 90 - 360), all$angG[i] <- (360 - all$vGrAng[i] + 90))
+}
+
+cellspec <- unique(all[ ,c("cell","species")])
+
+final <- matrix(NA, 0, 27)
+
+for (a in 1:nrow(cellspec)){  # loop in a cell and species
+  dat.temp <- subset(all, cellspec[a,1] == cell & cellspec[a,2] == species)
+  if (nrow(dat.temp) >= 8){  # at least 8 years of data
+    Anom <- apply(dat.temp[,c("arr_GAM_mean","gr_mn","vArrMag","vGrMag","lag")], 2, function(x) scale(log(x), scale = FALSE))
+    colnames(Anom) <- c("AnomDArr", "AnomDGr", "AnomVArr", "AnomVGr", "AnomLag")
+    dat.temp <- cbind(dat.temp, Anom)
+    final <- rbind(final, dat.temp)
+  }
+}
+
+# merge lat and lon data for cells back in
+vel <- merge(velocity, cells, by.x = c("cell"), by.y = c("cell"))
+vel$cell_lat <- scale(vel$cell_lat, scale = FALSE)  #scale lat for regression analysis
+
+final$cell_lat <- scale(final$cell_lat, scale = FALSE)  #scale lat for regression analysis
+
+final2 <- final %>% 
+  drop_na(vArrMag) %>% 
+  drop_na(angB) %>% 
+  drop_na(vGrMag) %>% 
+  drop_na(angG) %>% 
+  filter(vGrMag < 10000,
+         vArrMag < 10000) %>% 
+  mutate(vArrMag_s = scale(vArrMag),
+         vGrMag_s = scale(vGrMag))
+
+#a <- lmer(data = final, vArrMag ~ vGrMag + (1|cell))
+#b <- lmer(data = final, vArrMag ~ vGrMag + (1|cell) + (1|species))
+#lm(data = final, vGrMag ~ cell_lat)
+
+(mm1 <- lmer(data = final2, vArrMag_s ~ vGrMag_s + (1|cell) + (1|species) + (1|year)))
+(mm2 <- lmer(data = final2, vArrMag_s ~ vGrMag_s + (1|cell) + (1|species)))
+(mm3 <- lmer(data = final2, vArrMag_s ~ vGrMag_s + (1|cell) + (1|year)))
+(mm4 <- lmer(data = final2, vArrMag_s ~ vGrMag_s + (1|species) + (1|year)))
+(mm5 <- lmer(data = final2, vArrMag_s ~ vGrMag_s + (1|cell) ))
+(mm6 <- lmer(data = final2, vArrMag_s ~ vGrMag_s + (1|species)))
+(mm7 <- lmer(data = final2, vArrMag_s ~ vGrMag_s + (1|year)))
+(mm8 <- lm(data = final2, vArrMag_s ~ vGrMag_s))
+(mm9 <- lmer(data = final2, vArrMag_s ~ vGrMag_s + cell_lat + (1|cell)+ (1|species)))
+
+AIC(mm1,mm2,mm3,mm4,mm5,mm6,mm7,mm8,mm9) %>% arrange(AIC)  # mm1 best, but mm2 is close enough and simpler
+
+(ma1 <- lmer(data = final2, angB ~ angG + (1|cell) + (1|species) + (1|year)))
+(ma2 <- lmer(data = final2, angB ~ angG + (1|cell) + (1|species)))
+(ma3 <- lmer(data = final2, angB ~ angG + (1|cell) + (1|year)))
+(ma4 <- lmer(data = final2, angB ~ angG + (1|species) + (1|year)))
+(ma5 <- lmer(data = final2, angB ~ angG + (1|cell) ))
+(ma6 <- lmer(data = final2, angB ~ angG + (1|species)))
+(ma7 <- lmer(data = final2, angB ~ angG + (1|year)))
+(ma8 <- lm(data = final2, angB ~ angG))
+
+
+AIC(ma1,ma2,ma3,ma4,ma5,ma6,ma7,ma8) %>% arrange(AIC)  # ma1 is the best
+sjPlot:: tab_model(ma1)
+
+(vellat1 <- lmer(data = final2, vArrMag ~ cell_lat + (1|cell) + (1|species) + (1|year)))
+(vellat2 <- lmer(data = final2, vArrMag ~ cell_lat + (1|cell) + (1|species)))
+(vellat3 <- lmer(data = final2, vArrMag ~ cell_lat + (1|cell) + (1|year)))
+(vellat4 <- lmer(data = final2, vArrMag ~ cell_lat + (1|species) + (1|year)))
+(vellat5 <- lmer(data = final2, vArrMag ~ cell_lat + (1|cell) ))
+(vellat6 <- lmer(data = final2, vArrMag ~ cell_lat + (1|species)))
+(vellat7 <- lmer(data = final2, vArrMag ~ cell_lat + (1|year)))
+(vellat8 <- lm(data = final2, vArrMag ~ cell_lat))
+
+AIC(vellat1,vellat2,vellat3,vellat4,vellat5,vellat6,vellat7,vellat8) %>% arrange(AIC)
+sjPlot::tab_model(vellat2, 
+                  show.re.var= TRUE, 
+                  pred.labels =c("Intercept", "Latitude"),
+                  dv.labels= "Bird Migration Velocity")
+
+## plots
+#obvious?
+ggplot(all, aes(y = vArrMag, x = lag)) +
+#  geom_point() +
+  geom_smooth() 
+
+## animation - wave going up
+## have the arrows with different colors according to its size
+
+
+plot_mapvel("Tachycineta_bicolor", "all")
+plot_mapvel("Vireo_olivaceus", "all")
+plot_mapvel("Setophaga_americana", "all")
+plot_mapvel("Setophaga_discolor", "all")
+
+
+birdx <- bird %>% filter(species == "Setophaga_discolor")
+findcel <- velocity %>% filter(species == "Setophaga_discolor")
+cellfil <- sort(unique(findcel$cell))
+
+rr +
+  geom_point(data = preds3, aes(x = cell_lng, y = cell_lat, 
+                                  group = cell, colour = "red"), size = 5) +
+  ggtitle(glue("{sps} {year}")) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_line(color = alpha('black', 0.2),
+                                        size = 0.5),
+        panel.ontop = TRUE,
+        plot.title = element_text(hjust = 0.5),
+        panel.background = element_rect(fill = NA),
+        legend.title=element_text(size=13),
+        legend.spacing.y = grid::unit(0.5, "cm"),
+        legend.text=element_text(size=rel(1.2)),
+        legend.key.height=grid::unit(0.9,"cm"),
+        legend.title.align=0.5,
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.border = element_blank()) +
+  geom_point(data = birdx, 
+             aes(x = cell_lng, y = cell_lat, 
+                 group = cell), size = 0.5, colour = "blue") 
+  
+
 
