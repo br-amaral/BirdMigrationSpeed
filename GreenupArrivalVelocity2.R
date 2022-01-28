@@ -6,17 +6,18 @@ library(REdaS)
 library(glue)
 library(tidyverse)
 library(lme4)
+library(gganimate)
 
 # create map
 source("~/Documents/GitHub/BirdMigrationSpeed/map.R")
-rm(list= ls()[!(ls() %in% c('rr'))])
+rm(list= ls()[!(ls() %in% c('rr', 'rrb', 'pp'))])
 
 # import data ---------------------------
 BIRDDATA_PATH <- glue("data/arrival_master_2020-07-21.csv") # may not be the most current data file - but what i first found
 GREENDATA_PATH <- glue("data/MidGreenup_2020-08-06-forest.csv")
 
 bird1 <- read_csv(BIRDDATA_PATH) %>% 
-  filter(VALID_GAM == TRUE) %>% filter(species == "Setophaga_discolor")
+  filter(VALID_GAM == TRUE) ##%>% filter(species == "Setophaga_discolor")
 bird1 <- bird1[,-1]
 
 greenup1 <- read_csv(GREENDATA_PATH) %>% 
@@ -93,13 +94,23 @@ velocity <- data.frame(species = velocity[,1],
                        vArrMag = as.numeric(velocity[,5]),  # magnitude
                        vArrAng = as.numeric(velocity[,6]))  # angle
 
+velocity$cell <- as.numeric(velocity$cell)
+
+preds <- left_join(velocity, cells, by= "cell")
+preds$ang <- NA
+for(i in 1:nrow(preds)){
+  if((360 - preds$vArrAng[i] + 90)>360) {preds$ang[i] = (360 - preds$vArrAng[i] + 90 - 360)}
+  if((360 - preds$vArrAng[i] + 90)<360) {preds$ang[i] = (360 - preds$vArrAng[i] + 90)}
+}
+
+
 # calculate velocity for green up -------------
 velocityG <- data.frame(year = c(), cell = c(), N = c(), vArrMag = c(),vGrMag = c())
 
 for(a in 2002:2017){
   dat.temp <- subset(greenup, year == a)
   for(b in 1:nrow(cells)){
-    dat.lm <- dat.temp[dat.temp$cell %in% cells[c(adj[[b]],b),1], c("cell_lat","cell_lng","gr_mn","cell")]
+    dat.lm <- dat.temp[dat.temp$cell %in% c(adj[[b]], cells[b,1]), c("cell_lat","cell_lng","gr_mn","cell")]
     if(nrow(dat.lm) >= minNeigh) {       # validate that minimum data points available
       if(sum(!is.na(dat.lm$gr_mn)) >= minNeigh){
         #print(c(a,b))
@@ -126,13 +137,6 @@ velocityG <- data.frame(year = as.numeric(velocityG[,1]),
                         vGrAng = as.numeric(velocityG[,5]))
 
 # plot velocity for species   --------------------------------
-velocity$cell <- as.numeric(velocity$cell)
-preds <- left_join(velocity, cells, by= "cell")
-preds$ang <- NA
-for(i in 1:nrow(preds)){
-  if((360 - preds$vArrAng[i] + 90)>360) {preds$ang[i] = (360 - preds$vArrAng[i] + 90 - 360)}
-  if((360 - preds$vArrAng[i] + 90)<360) {preds$ang[i] = (360 - preds$vArrAng[i] + 90)}
-}
 
 plot_mapvel <- function(sps,year){
 
@@ -179,7 +183,9 @@ plot_mapvel <- function(sps,year){
   
   preds3$species <- sps
   
-  rr +
+  #rr +
+  #rrb + 
+  pp +
     geom_segment(data = preds3, aes(x = cell_lng, y = cell_lat, 
                                     xend = x, yend = y,
                                     group = cell, colour = "red"),
@@ -203,10 +209,10 @@ plot_mapvel <- function(sps,year){
           axis.title.y=element_blank(),
           axis.text.y=element_blank(),
           axis.ticks.y=element_blank(),
-          panel.border = element_blank())
+          panel.border = element_blank()) 
 }
 
-sps <- "Setophaga_discolor" #"Hirundo_rustica" # "Tachycineta_bicolor"
+sps <- "Setophaga_discolor" # "Hirundo_rustica" # "Tachycineta_bicolor"
 year <-  "all"
 
 plot_mapvel(sps,year)
@@ -271,7 +277,7 @@ plot_mapvelG <- function(year){
     ggtitle(glue("Green up {year}"))
 }
 
-plot_mapvelG(2002)
+plot_mapvelG("all")
 
 
 # correlation between green up and bird velocity  -----------------
@@ -304,9 +310,9 @@ for (a in 1:nrow(cellspec)){  # loop in a cell and species
 
 # merge lat and lon data for cells back in
 vel <- merge(velocity, cells, by.x = c("cell"), by.y = c("cell"))
-vel$cell_lat <- scale(vel$cell_lat, scale = FALSE)  #scale lat for regression analysis
+vel$cell_lat2 <- scale(vel$cell_lat, scale = FALSE)  #scale lat for regression analysis
 
-final$cell_lat <- scale(final$cell_lat, scale = FALSE)  #scale lat for regression analysis
+final$cell_lat2 <- scale(final$cell_lat, scale = FALSE)  #scale lat for regression analysis
 
 final2 <- final %>% 
   drop_na(vArrMag) %>% 
@@ -330,9 +336,10 @@ final2 <- final %>%
 (mm6 <- lmer(data = final2, vArrMag_s ~ vGrMag_s + (1|species)))
 (mm7 <- lmer(data = final2, vArrMag_s ~ vGrMag_s + (1|year)))
 (mm8 <- lm(data = final2, vArrMag_s ~ vGrMag_s))
-(mm9 <- lmer(data = final2, vArrMag_s ~ vGrMag_s + cell_lat + (1|cell)+ (1|species)))
+(mm9 <- lmer(data = final2, vArrMag_s ~ vGrMag_s + cell_lat2 + (1|cell)+ (1|species)))
 
 AIC(mm1,mm2,mm3,mm4,mm5,mm6,mm7,mm8,mm9) %>% arrange(AIC)  # mm1 best, but mm2 is close enough and simpler
+sjPlot:: tab_model(mm1)
 
 (ma1 <- lmer(data = final2, angB ~ angG + (1|cell) + (1|species) + (1|year)))
 (ma2 <- lmer(data = final2, angB ~ angG + (1|cell) + (1|species)))
@@ -343,34 +350,84 @@ AIC(mm1,mm2,mm3,mm4,mm5,mm6,mm7,mm8,mm9) %>% arrange(AIC)  # mm1 best, but mm2 i
 (ma7 <- lmer(data = final2, angB ~ angG + (1|year)))
 (ma8 <- lm(data = final2, angB ~ angG))
 
-
 AIC(ma1,ma2,ma3,ma4,ma5,ma6,ma7,ma8) %>% arrange(AIC)  # ma1 is the best
 sjPlot:: tab_model(ma1)
 
-(vellat1 <- lmer(data = final2, vArrMag ~ cell_lat + (1|cell) + (1|species) + (1|year)))
-(vellat2 <- lmer(data = final2, vArrMag ~ cell_lat + (1|cell) + (1|species)))
-(vellat3 <- lmer(data = final2, vArrMag ~ cell_lat + (1|cell) + (1|year)))
-(vellat4 <- lmer(data = final2, vArrMag ~ cell_lat + (1|species) + (1|year)))
-(vellat5 <- lmer(data = final2, vArrMag ~ cell_lat + (1|cell) ))
-(vellat6 <- lmer(data = final2, vArrMag ~ cell_lat + (1|species)))
-(vellat7 <- lmer(data = final2, vArrMag ~ cell_lat + (1|year)))
-(vellat8 <- lm(data = final2, vArrMag ~ cell_lat))
+(vellat1 <- lmer(data = final2, vArrMag_s ~ cell_lat2 + (1|cell) + (1|species) + (1|year)))
+(vellat2 <- lmer(data = final2, vArrMag_s ~ cell_lat2 + (1|cell) + (1|species)))
+(vellat3 <- lmer(data = final2, vArrMag_s ~ cell_lat2 + (1|cell) + (1|year)))
+(vellat4 <- lmer(data = final2, vArrMag_s ~ cell_lat2 + (1|species) + (1|year)))
+(vellat5 <- lmer(data = final2, vArrMag_s ~ cell_lat2 + (1|cell) ))
+(vellat6 <- lmer(data = final2, vArrMag_s ~ cell_lat2 + (1|species)))
+(vellat7 <- lmer(data = final2, vArrMag_s ~ cell_lat2 + (1|year)))
+(vellat8 <- lm(data = final2, vArrMag_s ~ cell_lat2))
 
 AIC(vellat1,vellat2,vellat3,vellat4,vellat5,vellat6,vellat7,vellat8) %>% arrange(AIC)
-sjPlot::tab_model(vellat2, 
+sjPlot::tab_model(vellat1, 
                   show.re.var= TRUE, 
                   pred.labels =c("Intercept", "Latitude"),
                   dv.labels= "Bird Migration Velocity")
+
+(time1 <- lmer(data = final2, vArrMag_s ~ year + (1|cell) + (1|species) + (1|cell_lat2)))
+(time2 <- lmer(data = final2, vArrMag_s ~ year + (1|cell) + (1|species)))
+(time3 <- lmer(data = final2, vArrMag_s ~ year + (1|cell) + (1|cell_lat2)))
+(time4 <- lmer(data = final2, vArrMag_s ~ year + (1|species) + (1|cell_lat2)))
+(time5 <- lmer(data = final2, vArrMag_s ~ year + (1|cell) ))
+(time6 <- lmer(data = final2, vArrMag_s ~ year + (1|species)))
+(time7 <- lmer(data = final2, vArrMag_s ~ year + (1|cell_lat2)))
+(time8 <- lm(data = final2, vArrMag_s ~ year))
+
+AIC(time1,time2,time3,time4,time5,time6,time7,time8) %>% arrange(AIC)
+sjPlot::tab_model(time2, 
+                  show.re.var= TRUE, 
+                  pred.labels =c("Intercept", "Year"),
+                  dv.labels= "Bird Migration Velocity")
+
 
 ## plots
 #obvious?
 ggplot(all, aes(y = vArrMag, x = lag)) +
 #  geom_point() +
-  geom_smooth() 
+  geom_smooth() +
+  theme_bw()
+
+ggplot(final2, aes(y = vArrMag, x = cell_lat)) +
+  #  geom_point() +
+  geom_smooth() +
+  theme_bw() #+  facet_wrap(~year,nrow=3)
+
+### 
+effects_vGr <- as.data.frame(effects::effect(term= "vGrMag_s", mod= mm1))
+effects_lat <- as.data.frame(effects::effect(term= "cell_lat2", mod= vellat1))
+effects_yr <- as.data.frame(effects::effect(term= "year", mod= time2))
+
+ggplot() + 
+  geom_point(data=final2, aes(y = vArrMag_s, x = vGrMag_s)) + 
+  geom_point(data=effects_vGr, aes(x=vGrMag_s, y=fit), color="blue") +
+  geom_ribbon(data= effects_vGr, aes(x=vGrMag_s, ymin=lower, ymax=upper), alpha= 0.3, fill="blue") +
+  labs(x="Vegetation velocity", y="Bird velocity")
+
+ggplot() + 
+  geom_point(data=final2, aes(y = vArrMag_s, x = cell_lat2)) + 
+  geom_line(data=effects_lat, aes(x=cell_lat2, y=fit), color="blue") +
+  geom_ribbon(data= effects_lat, aes(x=cell_lat2, ymin=lower, ymax=upper), alpha= 0.5, fill="blue") +
+  labs(x="Latitude", y="Bird velocity") +
+  theme_bw()
+
+ggplot() + 
+  geom_point(data=final2, aes(y = vArrMag_s, x = year)) + 
+  geom_line(data=effects_yr, aes(x=year, y=fit), color="blue") +
+  geom_ribbon(data= effects_yr, aes(x=year, ymin=lower, ymax=upper), alpha= 0.5, fill="blue") +
+  labs(x="Year", y="Bird velocity") +
+  theme_bw()
+
 
 ## animation - wave going up
 ## have the arrows with different colors according to its size
 
+final2 %>% 
+  group_by(species) %>% 
+  summarise(mean_speed = mean())
 
 plot_mapvel("Tachycineta_bicolor", "all")
 plot_mapvel("Vireo_olivaceus", "all")
@@ -378,13 +435,13 @@ plot_mapvel("Setophaga_americana", "all")
 plot_mapvel("Setophaga_discolor", "all")
 
 
-birdx <- bird %>% filter(species == "Setophaga_discolor")
+birdx <- final2 %>% filter(species == "Setophaga_americana")
 findcel <- velocity %>% filter(species == "Setophaga_discolor")
 cellfil <- sort(unique(findcel$cell))
 
-rr +
-  geom_point(data = preds3, aes(x = cell_lng, y = cell_lat, 
-                                  group = cell, colour = "red"), size = 5) +
+ggplot() +
+  geom_point(data = final2 %>% filter(species == "Setophaga_discolor"), 
+             aes(x = cell_lat2, y = vArrMag_s, colour = "red"), size = 5) +
   ggtitle(glue("{sps} {year}")) +
   theme_bw() +
   theme(legend.position = "none",
@@ -404,10 +461,7 @@ rr +
         axis.title.y=element_blank(),
         axis.text.y=element_blank(),
         axis.ticks.y=element_blank(),
-        panel.border = element_blank()) +
-  geom_point(data = birdx, 
-             aes(x = cell_lng, y = cell_lat, 
-                 group = cell), size = 0.5, colour = "blue") 
+        panel.border = element_blank()) 
   
 
 
