@@ -151,5 +151,11 @@ rr <- pp +
            label = ran_sp3$cell, col = 'black', alpha = 0.9,
            size = 3) #+
 
-
-
+rrb <- pp +
+  geom_polygon(data = cell_grid_tab4, aes(x = long, y = lat),
+               fill="white",
+               inherit.aes = FALSE, alpha = 1) +
+  geom_path(data = cell_grid_tab4,
+            aes(x = long,y = lat, group = cell),
+            inherit.aes = FALSE,
+            color = 'black', alpha = 0.2) 
