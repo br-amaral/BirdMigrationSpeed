@@ -1,3 +1,12 @@
+## Script to import phenological mismatch data (results from Youngflesh et al 2021) and create tibbles 
+##   with bird and green-up velocity to run models in 2_RunMods
+## Input:  arrival_master_2020-07-21.csv
+#          MidGreenup_2020-08-06-forest.csv
+## Output: velocityB.rds
+#          predsB.rds
+#          velocityG.rds
+#          predsG.rds
+
 library(glue)
 library(tidyverse)
 library(spdep)
