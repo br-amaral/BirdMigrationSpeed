@@ -8,12 +8,13 @@
 
 library(tidyverse)
 library(lme4)
-#library(ggforce)
+library(ggforce)
 library(sjPlot)
 library(sjmisc)
 library(sjlabelled)
 library(ggplot2)
 library(glue)
+library(effects)
 
 # import data ----------------------
 velB <- read_rds("data/velocityB.rds")
@@ -24,6 +25,7 @@ bg.mat <- read_rds("data/birdgreen.rds") %>%
 
 # VELOCITY --------------------
 # Bird speed and Green-up Speed -----------------
+# only latitude is significant - faster north
 (bgs1 <- lmer(data = bg.mat, vArrMag_log ~ vGrMag_log + (1|cell) + (1|species) + (1|year)))
 (bgs2 <- lmer(data = bg.mat, vArrMag_log ~ vGrMag_log + (1|cell) + (1|species)))
 (bgs3 <- lmer(data = bg.mat, vArrMag_log ~ vGrMag_log + (1|cell) + (1|year)))
@@ -41,7 +43,8 @@ bg.mat <- read_rds("data/birdgreen.rds") %>%
 sjPlot::tab_model(get(rownames(taic1)[1]),
                   show.re.var= TRUE, 
                   pred.labels =c("Intercept", "Green-up speed","Latitude", "Lag"),
-                  dv.labels= glue("Bird Migration Speed - model {rownames(taic1)[1]}"))
+                  dv.labels= glue("Bird Migration Speed - model {rownames(taic1)[1]}",),
+                  digits = 3)
 
 get(rownames(taic1)[1])
 
@@ -49,15 +52,15 @@ get(rownames(taic1)[1])
 lattice::xyplot(fitted(get(rownames(taic1)[1]))~eval(parse(text = paste(names(fixef(get(rownames(taic1)[1])))[-1]))) | species, 
                 data=bg.mat, type=c('r'), auto.key=F, cex=0.1,
                 par.strip.text=list(cex=0.5), 
-                xlab = names(fixef(bgs11))[-1],
+                xlab = names(fixef(get(rownames(taic1)[1])))[-1],
                 ylab = "vArrMag_log")
 
-plot_model(get(rownames(taic1)[1]), type = "pred", terms = c("vGrMag_log" #"species",
-                                                             ))
-plot_model(get(rownames(taic1)[1]), type = "pred", terms = c("cell_lat"))
-plot_model(get(rownames(taic1)[1]), type = "pred", terms = c("AnomLag"))
+plot(Effect(c("vGrMag_log"), get(rownames(taic1)[1])))
+plot(Effect(c("cell_lat"), get(rownames(taic1)[1])))
+plot(Effect(c("AnomLag"), get(rownames(taic1)[1])))
 
 # Bird angle and Green up Angle  --------------------
+# nothing significant
 (bga1 <- lmer(data = bg.mat, angB ~ angG + (1|cell) + (1|species) + (1|year)))
 (bga2 <- lmer(data = bg.mat, angB ~ angG + (1|cell) + (1|species)))
 (bga3 <- lmer(data = bg.mat, angB ~ angG + (1|cell) + (1|year)))
@@ -67,13 +70,23 @@ plot_model(get(rownames(taic1)[1]), type = "pred", terms = c("AnomLag"))
 (bga7 <- lmer(data = bg.mat, angB ~ angG + (1|year)))
 (bga8 <- lm(data = bg.mat, angB ~ angG))
 
-(taic2 <- AIC(bga1,bga2,bga3,bga4,bga5,bga6,bga7,bga8,bga9,bga10,bga11,bga12) %>% arrange(AIC))  # bga1 best, but bga2 is close enough and simpler
+(taic2 <- AIC(bga1,bga2,bga3,bga4,bga5,bga6,bga7,bga8) %>% arrange(AIC))  
 sjPlot::tab_model(get(rownames(taic2)[1]),
                   show.re.var= TRUE, 
                   pred.labels =c("Intercept", "Angle"),
-                  dv.labels= glue("Bird Migration ANgle - model {rownames(taic2)[1]}"))
+                  dv.labels= glue("Bird Migration Angle - model {rownames(taic2)[1]}"),
+                  digits = 3)
+rownames(taic2)[1]
+
+lattice::xyplot(fitted(get(rownames(taic2)[1]))~eval(parse(text = 
+                                                             paste(names(fixef(get(rownames(taic2)[1])))[-1]))) | species, 
+                data=bg.mat, type=c('r'), auto.key=F, cex=0.1,
+                par.strip.text=list(cex=0.5), 
+                xlab = names(fixef(get(rownames(taic2)[1])))[-1],
+                ylab = "angB")
 
 # Bird Speed and Latitude ------------------
+# latitude is significant - faster north
 (bsl1 <- lmer(data = bg.mat, vArrMag_log ~ cell_lat + (1|cell) + (1|species) + (1|year)))
 (bsl1.5<-lmer(data = bg.mat, vArrMag_log ~ cell_lat + I(cell_lat^2) + (1|cell) + (1|species) + (1|year)))
 (bsl2 <- lmer(data = bg.mat, vArrMag_log ~ cell_lat + (1|cell) + (1|species)))
@@ -83,12 +96,26 @@ sjPlot::tab_model(get(rownames(taic2)[1]),
 (bsl6 <- lmer(data = bg.mat, vArrMag_log ~ cell_lat + (1|species)))
 (bsl7 <- lmer(data = bg.mat, vArrMag_log ~ cell_lat + (1|year)))
 (bsl8 <-   lm(data = bg.mat, vArrMag_log ~ cell_lat))
+(bsl9 <- lmer(data = bg.mat, vArrMag_log ~ cell_lat + (1|cell) + (1|species) + (1|year) + AnomLag))
 
-(taic3 <- AIC(bsl1,bsl1.5,bsl2,bsl3,bsl4,bsl5,bsl6,bsl7,bsl8) %>% arrange(AIC))  
+(taic3 <- AIC(bsl1,bsl1.5,bsl2,bsl3,bsl4,bsl5,bsl6,bsl7,bsl8, bsl9) %>% arrange(AIC))  
 sjPlot::tab_model(get(rownames(taic3)[1]),
-                   show.re.var= TRUE, 
-                   pred.labels =c("Intercept", "Latitude"),
-                   dv.labels= glue("Bird Migration Velocity - model {rownames(taic3)[1]}"))
+                  show.re.var= TRUE, 
+                  pred.labels =c("Intercept", "Latitude", "Lag"),
+                  dv.labels= glue("Bird Migration Velocity - model {rownames(taic3)[1]}"),
+                  digits = 3)
+
+rownames(taic3)[1]
+
+lattice::xyplot(fitted(get(rownames(taic3)[1]))~eval(parse(text = 
+                                                             paste(names(fixef(get(rownames(taic3)[1])))[-1]))) | species, 
+                data=bg.mat, type=c('r'), auto.key=F, cex=0.1,
+                par.strip.text=list(cex=0.5), 
+                xlab = names(fixef(get(rownames(taic3)[1])))[-1],
+                ylab = "vArrMag_log")
+
+plot(Effect(c("cell_lat"), get(rownames(taic3)[1])))
+plot(Effect(c("AnomLag"), get(rownames(taic3)[1])))
 
 # Green-up Speed and Latitude  --------------------
 (gsl1 <- lmer(data = bg.mat, vGrMag_log ~ cell_lat + (1|cell) + (1|year)))
@@ -101,7 +128,8 @@ sjPlot::tab_model(get(rownames(taic3)[1]),
 sjPlot::tab_model(get(rownames(taic4)[1]),
                   show.re.var= TRUE, 
                   pred.labels =c("Intercept", "Latitude"),
-                  dv.labels= glue("Green-up speed - model {rownames(taic4)[1]}"))
+                  dv.labels= glue("Green-up speed - model {rownames(taic4)[1]}"),
+                  digits = 3)
 
 # ANOMALIES  -----------------------------
 # Bird speed with Lag --------------------------
@@ -120,41 +148,39 @@ sjPlot::tab_model(get(rownames(taic4)[1]),
 sjPlot::tab_model(get(rownames(taic5)[1]),
                   show.re.var= TRUE, 
                   pred.labels =c("Intercept", "Lag"),
-                  dv.labels= glue("Bird speed - model {rownames(taic5)[1]}"))
+                  dv.labels= glue("Bird speed - model {rownames(taic5)[1]}"),
+                  digits = 3)
 
-ggplot(data = bg.mat, aes(y = vArrMag_log, x = lag)) +
-  geom_point() +
-  geom_vline(xintercept = 0, color = "red") +
-  geom_hline(yintercept = 0, color = "red") +
-  facet_wrap_paginate(~species, ncol = 5, nrow = 6, page = 1)
-ggplot(data = bg.mat, aes(y = vArrMag, x = lag)) +
-  geom_point() +
-  geom_vline(xintercept = 0, color = "red") +
-  geom_hline(yintercept = 0, color = "red") +
-  facet_wrap_paginate(~species, ncol = 5, nrow = 6, page = 2)
+rownames(taic5)[1]
+
+plot(Effect(c("lag"), get(rownames(taic5)[1])))
+
+lattice::xyplot(fitted(get(rownames(taic5)[1]))~eval(parse(text = 
+                                                             paste(names(fixef(get(rownames(taic5)[1])))[-1]))) | species, 
+                data=bg.mat, type=c('r'), auto.key=F, cex=0.1,
+                par.strip.text=list(cex=0.5), 
+                xlab = names(fixef(get(rownames(taic5)[1])))[-1],
+                ylab = "vArrMag_log")
 
 # Year and Lags -------------------
-(yl1 <- lmer(data = bg.mat, AnomLag ~ year + (1|cell) + (1|species) + (1|year)))
-(yl2 <- lmer(data = bg.mat, AnomLag ~ year + (1|cell) + (1|species)))
-(yl3 <- lmer(data = bg.mat, AnomLag ~ year + (1|cell) + (1|year)))
-(yl4 <- lmer(data = bg.mat, AnomLag ~ year + (1|species) + (1|year)))
-(yl5 <- lmer(data = bg.mat, AnomLag ~ year + (1|cell)))
-(yl6 <- lmer(data = bg.mat, AnomLag ~ year + (1|species)))
-(yl7 <- lmer(data = bg.mat, AnomLag ~ year + (1|year)))
+#not significantly different
+(yl1 <- lmer(data = bg.mat, AnomLag ~ year + (1|cell) + (1|species)))
+(yl2 <- lmer(data = bg.mat, AnomLag ~ year + (1|cell)))
+(yl3 <- lmer(data = bg.mat, AnomLag ~ year + (1|species)))
+(yl4  <-  lm(data = bg.mat, AnomLag ~ year))
+(yl5  <-  lm(data = bg.mat, AnomLag ~ as.factor(year)))
 
-(taic6 <- AIC(yl1,bsl2,bsl3,bsl4,bsl5,bsl6,bsl7,bsl8,bsl9) %>% arrange(AIC))  
+(taic6 <- AIC(yl1,yl2,yl3,yl4,yl5) %>% arrange(AIC))  
 sjPlot::tab_model(get(rownames(taic6)[1]),
                   show.re.var= TRUE, 
-                  pred.labels =c("Year"),
-                  dv.labels= glue("Lag - model {rownames(taic6)[1]}"))
+                  pred.labels =c("Intercept","Year"),
+                  dv.labels= glue("Lag - model {rownames(taic6)[1]}"),
+                  digits = 3)
 
 ggplot(data = bg.mat, aes(x = year, y = AnomLag), col = "black") +
   #geom_point() +
   geom_boxplot(aes(x = factor(year), y = AnomLag)) +
   geom_hline(yintercept = 0, color = "red") 
-ggplot(data = bg.mat, aes(x = year, y = AnomLag), col = "black") +
-  geom_smooth(method = "lm", se=TRUE, aes(x = as.integer(year), y = AnomLag))
-
 
 ## which species are late? plot with species ordered in lag
 # kid of different results wit log and no log
@@ -170,10 +196,6 @@ ggplot(data = bg.mat,
 ## predictions plots for each model
 
 ## maps plots - color of the arrow range of magnitude
-  
-
-
-
 
 
 
