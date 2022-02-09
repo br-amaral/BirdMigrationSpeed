@@ -2,20 +2,22 @@
 ##   with bird and green-up velocity to run models in 2_RunMods
 ## Input:  arrival_master_2020-07-21.csv
 #          MidGreenup_2020-08-06-forest.csv
-## Output: velocityB.rds
-#          predsB.rds
+## Output: velocityB.rds 
+#          cellaveB.rds
 #          velocityG.rds
-#          predsG.rds
+#          cellaveG.rds
+#          birdgreen.rds
 
 library(glue)
 library(tidyverse)
 library(spdep)
 library(SpatialEpi)
 library(REdaS)
+library(dplyr)
 
 # import data ---------------------------
-BIRDDATA_PATH <- glue("data/arrival_master_2020-07-21.csv") # may not be the most current data file - but what i first found
-GREENDATA_PATH <- glue("data/MidGreenup_2020-08-06-forest.csv")
+BIRDDATA_PATH <- glue("data/source/arrival_master_2020-07-21.csv") # may not be the most current data file - but what i first found
+GREENDATA_PATH <- glue("data/source/MidGreenup_2020-08-06-forest.csv")
 
 bird1 <- read_csv(BIRDDATA_PATH) %>% 
   filter(VALID_GAM == TRUE) ##%>% filter(species == "Setophaga_discolor")
@@ -47,65 +49,79 @@ cells <- unique(greenup[ ,c("cell","cell_lat","cell_lng")])    # unique data poi
 
 adj <- dnearneigh(as.matrix(cells[ ,3:2]), 0, 360, longlat= TRUE)   # list of adjacent cells for each cell
 num <- sapply(adj, length)         # number of neighbors for each cell
-cells <- cells[num >= minNeigh,]   # keep only cells with enough neighbors
-#   a later step will reassess whether minimum neighbors for individual species and years 
-adj <- adj[num >= minNeigh]        # eliminate cells with too few neighbors
-num <- sapply(adj,length)          # recalculate num (number of neighbors) for the reduced data set
+adj <- adj[num >= 0] 
 
+#cells <- cells[num >= minNeigh,]   # keep only cells with enough neighbors
+#   a later step will reassess whether minimum neighbors for individual species and years 
+#adj <- adj[num >= minNeigh]        # eliminate cells with too few neighbors
+#num <- sapply(adj,length)          # recalculate num (number of neighbors) for the reduced data set
+
+cells <- as.tibble(cells)
+cells <- cells %>% 
+  mutate(adj = adj,
+         numn = num)
 # calculate velocity for birds --------------------------
 velocityB <- data.frame(spec = c(), year = c(), cell = c(), N = c(), vArrMag = c(),vGrMag = c())
 
 # velocities are specific to year, species and cell
-#    yr <- 2004   ;  spp <- 40  ;  b <- 38
+#    yr <- 2015   ;  spp <- 55  ;  b <- 48
+#    yr <- 2002   ;  spp <- 6  ;  b <- 38
 #dat.lm1 <- as.data.frame(matrix(NA, ncol = 5))
 #colnames(dat.lm1) <- c("cell_lat","cell_lng","arr_GAM_mean","cell","b")
 for (yr in 2002:2017){
   for (spp in 1:length(spec)){
     dat.temp <- subset(bird, year == yr & species == spec[spp])
-    for (b in 1:nrow(cells)){ # look at the neighbours of a cell
-      dat.lm <- dat.lm2 <- dat.temp[dat.temp$cell %in% c(adj[[b]], cells[b,1]), c("cell_lat","cell_lng","arr_GAM_mean","cell")]   # get lat, long and Gam arrival mean
+    for (b in 1:nrow(cells)){ # look at the neighbours of a cell   c(adj[[b]], cells[b,1])
+      # print(cells[b,])
+      vecnei <- c(pull(cells[unlist(cells$adj[b]),1]), pull(cells[b,1]))
+      dat.lm <- dat.temp[dat.temp$cell %in% vecnei, c("cell_lat","cell_lng","arr_GAM_mean","cell")]  
+      rm(vecnei)
+      #dat.lm <- dat.temp[dat.temp$cell %in% cells[c(adj[[b]],b),1], c("cell_lat","cell_lng","arr_GAM_mean","cell")]   # get lat, long and Gam arrival mean
       if(nrow(dat.lm) >= minNeigh) {  # validate that minimum data points available
-        if(sum(!is.na(dat.lm$arr_GAM_mean)) >= minNeigh){
+        if(sum(!is.na(dat.lm$arr_GAM_mean)) >= minNeigh + 1){
           #print(c(yr, spp, b))
           #dat.lm2$b <- cells[b,1]
           #dat.lm1 <- rbind(dat.lm1,dat.lm2)
           xy <- latlong2grid(dat.lm[,2:1])  # cel positions
+          colnames(xy) <- c('x','y')
           coef <- lm(data = dat.lm, formula = arr_GAM_mean ~ xy$x + xy$y)$coef[2:3]
           angle <- rad2deg(atan2(coef[1],coef[2]))
           if(angle < 0) {angle = angle + 360}
           velocityB <- rbind(velocityB,
-                            c(spec[spp],
-                              yr,
-                              cells[b,1],
-                              sum(!is.na(dat.lm$arr_GAM_mean)),
-                              sqrt((1/coef[1])^2+(1/coef[2])^2),
-                              #1/sqrt(sum(coef^2)),
-                              angle)
-          )
+                             c(spec[spp],
+                               yr,
+                               as.numeric(cells[b,1]),
+                               sum(!is.na(dat.lm$arr_GAM_mean)),
+                               as.numeric(sqrt((1/coef[1])^2+(1/coef[2])^2)),
+                               #1/sqrt(sum(coef^2)),
+                               as.numeric(angle))
+            )
+          }
         }
-      }
     }
   }
 }
 
 velocityB <- data.frame(species = velocityB[,1], 
-                       year = as.numeric(velocityB[,2]),
-                       cell = velocityB[,3],
-                       NArr = as.numeric(velocityB[,4]),
-                       vArrMag = as.numeric(velocityB[,5]),  # magnitude
-                       vArrAng = as.numeric(velocityB[,6]))  # angle
+                        year = as.numeric(velocityB[,2]),
+                        cell = velocityB[,3],
+                        NArr = as.numeric(velocityB[,4]),
+                        vArrMag = as.numeric(velocityB[,5]),  # magnitude
+                        vArrAng = as.numeric(velocityB[,6]))  # angle
 
 velocityB$cell <- as.numeric(velocityB$cell)
 
-preds <- left_join(velocityB, cells, by= "cell")
+preds <- left_join(velocityB, cells[,1:3], by= "cell")
 preds$ang <- NA
 for(i in 1:nrow(preds)){
-  if((360 - preds$vArrAng[i] + 90)>360) {preds$ang[i] = (360 - preds$vArrAng[i] + 90 - 360)}
-  if((360 - preds$vArrAng[i] + 90)<360) {preds$ang[i] = (360 - preds$vArrAng[i] + 90)}
+  if(!is.na(preds$vArrAng[i]) & (360 - preds$vArrAng[i] + 90)>360) 
+  {preds$ang[i] = (360 - preds$vArrAng[i] + 90 - 360)}
+  if(!is.na(preds$vArrAng[i]) & (360 - preds$vArrAng[i] + 90)<360) 
+  {preds$ang[i] = (360 - preds$vArrAng[i] + 90)}
 }
 
 preds2 <- preds %>% 
-  filter(vArrMag < 10000) %>% 
+  #  filter(vArrMag < 10000) %>% 
   mutate(
     # x = (cell_lng + 10) * cos(ang * pi / 180),
     # y = (cell_lat + 10) * sin(ang * pi / 180)
@@ -114,7 +130,7 @@ preds2 <- preds %>%
   )
 
 cell_sps <- preds2 %>% 
-  select(species, cell) %>% 
+  dplyr::select(species, cell) %>% 
   unique()
 
 preds3 <- as.data.frame(matrix(data = NA, ncol = 6, nrow = nrow(cell_sps)))
@@ -145,6 +161,8 @@ for(i in 1:nrow(preds3)){
 } 
 
 predsB <- preds3
+velocityB <- preds2
+colnames(velocityB) <- c("species", "year", "cell", "NArr", "vArrMag", "vArrAng", "cell_lat", "cell_lng","angB", "xB", "yB")      
 
 # calculate velocity for green up -------------
 velocityG <- data.frame(year = c(), cell = c(), N = c(), vArrMag = c(),vGrMag = c())
@@ -152,21 +170,25 @@ velocityG <- data.frame(year = c(), cell = c(), N = c(), vArrMag = c(),vGrMag = 
 for(a in 2002:2017){
   dat.temp <- subset(greenup, year == a)
   for(b in 1:nrow(cells)){
-    dat.lm <- dat.temp[dat.temp$cell %in% c(adj[[b]], cells[b,1]), c("cell_lat","cell_lng","gr_mn","cell")]
+    vecnei <- c(pull(cells[unlist(cells$adj[b]),1]), pull(cells[b,1]))
+    dat.lm <- dat.temp[dat.temp$cell %in% vecnei, c("cell_lat","cell_lng","gr_mn","cell")]  
+    rm(vecnei)
+    #dat.lm <- dat.temp[dat.temp$cell %in% pull(cells[c(adj[[b]],b),1]), c("cell_lat","cell_lng","gr_mn","cell")]
     if(nrow(dat.lm) >= minNeigh) {       # validate that minimum data points available
-      if(sum(!is.na(dat.lm$gr_mn)) >= minNeigh){
+      if(sum(!is.na(dat.lm$gr_mn)) >= minNeigh + 1){
         #print(c(a,b))
         xy <- latlong2grid(dat.lm[ ,2:1])
+        colnames(xy) <- c('x','y')
         coef <- lm(data = dat.lm, formula = gr_mn ~ xy$x + xy$y)$coef[2:3]
         angle <- rad2deg(atan2(coef[1],coef[2]))
         if(angle < 0) {angle = angle + 360}
         velocityG <- rbind(velocityG,
                            c(a,
-                             cells[b,1],
-                             sum(!is.na(dat.lm$gr_mn)),
+                             as.numeric(cells[b,1]),
+                             as.numeric(sum(!is.na(dat.lm$gr_mn))),
                              #1/sqrt(sum(coef^2)),
-                             sqrt((1/coef[1])^2+(1/coef[2])^2),
-                             angle))
+                             as.numeric(sqrt((1/coef[1])^2+(1/coef[2])^2)),
+                             as.numeric(angle)))
       }
     }
   }
@@ -178,16 +200,17 @@ velocityG <- data.frame(year = as.numeric(velocityG[,1]),
                         vGrMag = as.numeric(velocityG[,4]),
                         vGrAng = as.numeric(velocityG[,5]))
 
-velG <- left_join(velocityG, cells, by= "cell")
+velG <- left_join(velocityG, cells[,1:3], by= "cell")
 velG$ang <- NA
 
-for(i in 1:nrow(preds)){
-  if((360 - velG$vGrAng[i] + 90)>360) {velG$ang[i] = (360 - velG$vGrAng[i] + 90 - 360)}
-  if((360 - velG$vGrAng[i] + 90)<360) {velG$ang[i] = (360 - velG$vGrAng[i] + 90)}
+for(i in 1:nrow(velG)){
+  if(!is.na(velG$vGrAng[i]) & (360 - velG$vGrAng[i] + 90)>360) 
+  {velG$ang[i] = (360 - velG$vGrAng[i] + 90 - 360)} 
+  if(!is.na(velG$vGrAng[i]) & (360 - velG$vGrAng[i] + 90)<360) 
+  {velG$ang[i] = (360 - velG$vGrAng[i] + 90)}
 }
 
 velG <- velG %>% 
-  filter(vGrMag < 10000) %>% 
   mutate(
     # x = (cell_lng + 10) * cos(ang * pi / 180),
     # y = (cell_lat + 10) * sin(ang * pi / 180)
@@ -195,6 +218,10 @@ velG <- velG %>%
     y = cell_lat + log((vGrMag)) * sin(ang * pi / 180)
   )
 
+velocityG <- velG
+colnames(velocityG) <- c("year", "cell", "NGr", "vGrMag", "vGrAng", "cell_lat", "cell_lng", "angG", "xG", "yG")
+
+# average of all years
 cell_g <- sort(unique(velocityG$cell))
 predsG <- as.data.frame(matrix(data = NA, ncol = 5, nrow = length(cell_g)))
 colnames(predsG) <- c("cell","cell_lng","cell_lat","x","y")
@@ -219,24 +246,47 @@ for(i in 1:nrow(predsG)){
   }
 } 
 
-# correlation between green up and bird velocity  -----------------
+# join green up and bird velocity data -----------------
 # merge green up and bird velocity data
-all <- merge(bird, greenup[ ,c("year","cell","gr_mn","gr_ncell")], all.x = TRUE)
-all <- merge(all, velocityB, all.x = TRUE)
-all <- merge(all, velocityG, all.x = TRUE)
+
+# merge green up and bird velocity data
+all <- base::merge(bird, greenup[ ,c("year","cell","gr_mn","gr_ncell")], all.x = TRUE)
+velocityB <- velocityB %>% 
+  mutate(cell = as.integer(cell)) %>% 
+  dplyr::select(!cell_lat) %>% 
+  dplyr::select(!cell_lng)
+all <- full_join(all, velocityB, by = c("year", "cell", "species"))
+velocityG <- velocityG %>% 
+  mutate(cell = as.integer(cell)) %>% 
+  dplyr::select(!cell_lat) %>% 
+  dplyr::select(!cell_lng)
+all <- full_join(all, velocityG, by = c("year", "cell"))
 all$lag <- all$gr_mn - all$arr_GAM_mean
 
-all$angB <- all$angG <- NA
+all <- all %>% 
+  mutate(NArr = as.numeric(NArr),
+         vArrMag = as.numeric(vArrMag),
+         vArrAng = as.numeric(vArrAng),
+         angB = as.numeric(angB),
+         angG = as.numeric(angG)) %>% 
+  dplyr::select(-c(VALID_GAM, arr_IAR_mean, arr_IAR_sd))
 
 for(i in 1:nrow(all)){
-  ifelse(((360 - all$vArrAng[i] + 90)>360),all$angB[i] <- (360 - all$vArrAng[i] + 90 - 360),all$angB[i] <- (360 - all$vArrAng[i] + 90))
-  ifelse(((360 - all$vGrAng[i] + 90)>360), all$angG[i] <- (360 - all$vGrAng[i] + 90 - 360), all$angG[i] <- (360 - all$vGrAng[i] + 90))
+  if(!is.na(all$vArrMag[i])) {
+    if(all$vArrMag[i] > 10000) {all$vArrMag[i] <- NA}
+  }
 }
 
+for(i in 1:nrow(all)){
+  if(!is.na(all$vGrMag[i])) {
+    if(all$vGrMag[i] > 10000) {all$vGrMag[i] <- NA}
+  }
+}
 cellspec <- unique(all[ ,c("cell","species")])
 
 final <- matrix(NA, 0, 27)
 
+# subset of all data - get cells species with at least 8 years of data
 for (a in 1:nrow(cellspec)){  # loop in a cell and species
   dat.temp <- subset(all, cellspec[a,1] == cell & cellspec[a,2] == species)
   if (nrow(dat.temp) >= 8){  # at least 8 years of data
@@ -247,28 +297,15 @@ for (a in 1:nrow(cellspec)){  # loop in a cell and species
   }
 }
 
-# merge lat and lon data for cells back in
-vel <- merge(velocity, cells, by.x = c("cell"), by.y = c("cell"))
-vel$cell_lat2 <- scale(vel$cell_lat, scale = FALSE)  #scale lat for regression analysis
-
-final$cell_lat2 <- scale(final$cell_lat, scale = FALSE)  #scale lat for regression analysis
-
 final2 <- final %>% 
-  drop_na(vArrMag) %>% 
-  drop_na(angB) %>% 
-  drop_na(vGrMag) %>% 
-  drop_na(angG) %>% 
-  filter(vGrMag < 10000,
-         vArrMag < 10000) %>% 
-  mutate(vArrMag_s = scale(vArrMag),
-         vGrMag_s = scale(vGrMag))
-
-
+  mutate(cell_lat = scale(cell_lat, scale = FALSE))  #scale lat for regression analysis
 
 # save output tibbles to run models
-saveRDS(velocityB, file = "velocityB.rds")
-saveRDS(velocityG, file = "velocityG.rds")
-saveRDS(predsB, file = "predsB.rds")
-saveRDS(predsG, file = "predsG.rds")
+saveRDS(velocityB, file = "data/velocityB.rds")
+saveRDS(velocityG, file = "data/velocityG.rds")
+saveRDS(predsB, file = "data/cellaveB.rds")
+saveRDS(predsG, file = "data/cellaveG.rds")
+saveRDS(final2, file = "data/birdgreen.rds")
+
 
 
