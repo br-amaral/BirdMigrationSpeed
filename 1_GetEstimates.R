@@ -7,6 +7,7 @@
 #          velocityG.rds
 #          cellaveG.rds
 #          birdgreen.rds
+#          cellcoor.rds
 
 library(glue)
 library(tidyverse)
@@ -306,6 +307,7 @@ saveRDS(velocityG, file = "data/velocityG.rds")
 saveRDS(predsB, file = "data/cellaveB.rds")
 saveRDS(predsG, file = "data/cellaveG.rds")
 saveRDS(final2, file = "data/birdgreen.rds")
+saveRDS(cells %>% dplyr::select(cell, cell_lat, cell_lng), file = "data/cellcoor.rds")
 
 
 
