@@ -52,7 +52,6 @@ pp <- ggplot(data = worldmap, aes(x = long, y = lat,
         axis.ticks.y=element_blank()) +
   xlab('Longitude') +
   ylab('Latitude') +
-  labs(fill = 'Sensitivity\n(Days/Day)') +
   geom_path(aes(x = long, y = lat, group = group),
             alpha = 0.4, color = 'black')
 
@@ -65,31 +64,6 @@ TAB <- left_join(TAB, cellnumbs, by="cell") %>%
 
 load("MigSen/Data/species_Grid.RData")
 
-# sensitivity map
-doplot <- function(species) {
-  arr_f <- TAB[which(TAB$species == species),]
-  
-  #min/max for plotting using output data
-  MIN <- round((floor((min(arr_f$beta_mean, na.rm = TRUE))*10)/10), 1)
-  MAX <- round((ceiling((max(arr_f$beta_mean, na.rm = TRUE))*10)/10), 1)
-  
-  # get hex grid for species
-  cell_grid <- get(paste('cell_grid', species, sep="_")) 
-  
-  #merge hex spatial data with HM data
-  to_plt <- dplyr::inner_join(arr_f, cell_grid, by = 'cell')
-  
-  pp +
-    geom_polygon(data = to_plt, aes(x = long, 
-                                    y = lat, group = group, 
-                                    fill = beta_mean), alpha = 0.5) +
-    geom_path(data = to_plt, aes(x = long, 
-                                 y = lat, group = group), 
-              #alpha = 0.4, 
-              color = 'black') + 
-    scale_fill_viridis(option="magma",limits = c(MIN, MAX)) 
-  
-}
 
 # Line plot
 # all species
