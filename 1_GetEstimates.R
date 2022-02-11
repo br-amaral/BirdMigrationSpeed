@@ -34,12 +34,16 @@ cellnumbs <- data.frame(cell = tc,
 
 bird <- dplyr::left_join(bird1, cellnumbs, by = "cell") %>% 
   dplyr::select(-cell) %>% 
-  rename(cell = cell2)
+  rename(cell = cell2) #%>% # ONLY late years
+#  filter(year > 2008)
+
 bird <- as.data.frame(bird)
 
 greenup <- dplyr::left_join(greenup1, cellnumbs, by = "cell") %>% 
   dplyr::select(-cell) %>% 
-  rename(cell = cell2)
+  rename(cell = cell2) #%>% # ONLY late years
+#  filter(year > 2008)
+
 greenup <- as.data.frame(greenup)
 
 spec <- unique(bird$species)  # species list
