@@ -6,7 +6,6 @@ library(REdaS)
 library(glue)
 library(tidyverse)
 library(lme4)
-library(gganimate)
 
 # create map
 source("~/Documents/GitHub/BirdMigrationSpeed/map.R")
@@ -143,7 +142,7 @@ plot_mapvel <- function(sps,year){
   if(year == "all") {preds2 <- preds %>% 
     filter(species == sps)}
   
-  if(year != "all") {preds2 <- preds %>% 
+  if(year != "all") {preds2 <- sps %>% 
     filter(species == sps,
            year == year)}
   
@@ -152,8 +151,8 @@ plot_mapvel <- function(sps,year){
   preds2 <- preds2 %>% 
     filter(vArrMag < 10000) %>% 
     mutate(
-      #x = cell_lng + (cos(ang) * log(mag)),
-      #y = cell_lat + (sin(ang) * log(mag))
+      # x = (cell_lng + 10) * cos(ang * pi / 180),
+      # y = (cell_lat + 10) * sin(ang * pi / 180)
       x = cell_lng + log((vArrMag)) * cos(ang * pi / 180),
       y = cell_lat + log((vArrMag)) * sin(ang * pi / 180)
     )
@@ -384,6 +383,21 @@ sjPlot::tab_model(time2,
                   dv.labels= "Bird Migration Velocity")
 
 
+(timeG1 <- lmer(data = final2, vGrMag_s ~ year + (1|cell) +  (1|cell_lat2)))
+(timeG2 <- lmer(data = final2, vGrMag_s ~ year + (1|cell) ))
+(timeG3 <- lmer(data = final2, vGrMag_s ~ year  + (1|cell_lat2)))
+(timeG4 <- lm(data = final2, vGrMag_s ~ year))
+
+AIC(timeG1,timeG2,timeG3,timeG4) %>% arrange(AIC)
+sjPlot::tab_model(timeG2, 
+                  show.re.var= TRUE, 
+                  pred.labels =c("Intercept", "Year"),
+                  dv.labels= "Green-up Velocity")
+
+
+
+
+
 ## plots
 #obvious?
 ggplot(all, aes(y = vArrMag, x = lag)) +
@@ -400,6 +414,8 @@ ggplot(final2, aes(y = vArrMag, x = cell_lat)) +
 effects_vGr <- as.data.frame(effects::effect(term= "vGrMag_s", mod= mm1))
 effects_lat <- as.data.frame(effects::effect(term= "cell_lat2", mod= vellat1))
 effects_yr <- as.data.frame(effects::effect(term= "year", mod= time2))
+effects_yrG <- as.data.frame(effects::effect(term= "year", mod= timeG2))
+
 
 ggplot() + 
   geom_point(data=final2, aes(y = vArrMag_s, x = vGrMag_s)) + 
@@ -420,6 +436,25 @@ ggplot() +
   geom_ribbon(data= effects_yr, aes(x=year, ymin=lower, ymax=upper), alpha= 0.5, fill="blue") +
   labs(x="Year", y="Bird velocity") +
   theme_bw()
+
+ggplot() + 
+  geom_point(data=final2, aes(y = vGrMag_s, x = year)) + 
+  geom_line(data=effects_yrG, aes(x=year, y=fit), color="blue") +
+  geom_ribbon(data= effects_yrG, aes(x=year, ymin=lower, ymax=upper), alpha= 0.5, fill="blue") +
+  labs(x="Year", y="Bird velocity") +
+  theme_bw()
+
+
+lattice::xyplot(vArrMag_s~cell_lat2 | species,  data=final2, type=c('p','r'), auto.key=F)
+lattice::xyplot(fitted(vellat1)~cell_lat2 | species, data=final2, type=c('r'), auto.key=F)
+
+lattice::xyplot(vArrMag_s~year | species,  data=final2, type=c('p','r'), auto.key=F)
+lattice::xyplot(fitted(time2)~year | species, data=final2, type=c('r'), auto.key=F)
+
+# :(
+
+lattice::xyplot(vArrMag_s~vGrMag_s | species,  data=final2, type=c('p','r'), auto.key=F)
+lattice::xyplot(fitted(mm1)~vGrMag_s | species, data=final2, type=c('r'), auto.key=F)
 
 
 ## animation - wave going up
@@ -463,5 +498,110 @@ ggplot() +
         axis.ticks.y=element_blank(),
         panel.border = element_blank()) 
   
+### new map
+load("MigSen/Data/species_Grid.RData")
 
+spskey <- read_csv("data/spskey.csv")
+
+plot_mapvel2 <- function(sps,year){
+  
+  if(year == "all") {preds2 <- preds %>% 
+    filter(species == sps)}
+  
+  if(year != "all") {preds2 <- sps %>% 
+    filter(species == sps,
+           year == year)}
+  
+  cell_sps <- sort(unique(preds2$cell))
+  
+  preds2 <- preds2 %>% 
+    filter(vArrMag < 10000) %>% 
+    mutate(
+      # x = (cell_lng + 10) * cos(ang * pi / 180),
+      # y = (cell_lat + 10) * sin(ang * pi / 180)
+      x = cell_lng + 3 * cos(ang * pi / 180),
+      y = cell_lat + 3 * sin(ang * pi / 180)
+    ) %>% 
+    mutate(vArrMag_s = scale(vArrMag))
+  
+  preds3 <- as.data.frame(matrix(data = NA, ncol = 8, nrow = length(cell_sps)))
+  colnames(preds3) <- c("species","year","cell","cell_lng","cell_lat","x","y","mag_s")
+  
+  for(i in 1:length(cell_sps)){
+    celll <- cell_sps[i]
+    pred_loop <- preds2 %>% filter(cell == celll)
+    if(nrow(pred_loop) == 1) {
+      preds3$year[i] <- pred_loop$year
+      preds3$cell[i] <- pred_loop$cell
+      preds3$cell_lng[i] <- pred_loop$cell_lng
+      preds3$cell_lat[i] <- pred_loop$cell_lat
+      preds3$x[i] <- pred_loop$x
+      preds3$y[i] <- pred_loop$y
+      preds3$mag_s[i] <- pred_loop$vArrMag_s
+
+    } else {
+      preds3$year[i] <- pred_loop$year[1]
+      preds3$cell[i] <- pred_loop$cell[1]
+      preds3$cell_lng[i] <- pred_loop$cell_lng[1]
+      preds3$cell_lat[i] <- pred_loop$cell_lat[1]
+      preds3$x[i] <- mean(x = pred_loop$x)
+      preds3$y[i] <- mean(x = pred_loop$y)
+      preds3$mag_s[i] <- mean(pred_loop$vArrMag_s)
+    }
+  }
+  
+  preds3$species <- sps
+  
+  cell_grid <- get(paste('cell_grid', 
+                         as.character(spskey[which(spskey$sci_name == species),1]), 
+                         sep="_")) 
+  
+  cell_grid2 <- left_join(cell_grid, preds3, by = "cell")
+  
+  MIN <- round((floor((min(cell_grid2$mag_s, na.rm = TRUE))*10)/10), 1)
+  MAX <- round((ceiling((max(cell_grid2$mag_s, na.rm = TRUE))*10)/10), 1)
+  
+  
+  #rr +
+  #rrb + 
+  pp +
+    geom_polygon(data = cell_grid2, aes(x = long, 
+                                    y = lat, group = group, 
+                                    fill = mag_s), alpha = 0.5) +
+    geom_path(data = cell_grid2, aes(x = long, 
+                                 y = lat, group = group), 
+              #alpha = 0.4, 
+              color = 'darkgrey') +
+    geom_segment(data = preds3, aes(x = cell_lng, y = cell_lat, 
+                                    xend = x, yend = y,
+                                    group = cell), colour = "black",
+                 arrow = arrow(length = unit(0.1, "cm")), size = 0.5) +
+    ggtitle(glue("{sps} {year}")) +
+    theme_bw() +
+    theme(#legend.position = "none",
+          panel.grid.major = element_line(color = alpha('black', 0.2),
+                                          size = 0.5),
+          panel.ontop = TRUE,
+          plot.title = element_text(hjust = 0.5),
+          panel.background = element_rect(fill = NA),
+          legend.title=element_text(size=13),
+          legend.spacing.y = grid::unit(0.5, "cm"),
+          legend.text=element_text(size=rel(1.2)),
+          legend.key.height=grid::unit(0.9,"cm"),
+          legend.title.align=0.5,
+          axis.title.x=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank(),
+          axis.title.y=element_blank(),
+          axis.text.y=element_blank(),
+          axis.ticks.y=element_blank(),
+          panel.border = element_blank()) +
+    scale_fill_viridis(option="magma",limits = c(MIN, MAX)) 
+    
+}
+
+plot_mapvel2("Tachycineta_bicolor", "all")
+plot_mapvel2("Vireo_olivaceus", "all")
+plot_mapvel2("Setophaga_americana", "all")
+plot_mapvel2("Setophaga_discolor", "all")
 
