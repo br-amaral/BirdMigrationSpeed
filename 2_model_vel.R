@@ -19,7 +19,13 @@ library(effects)
 # import data ----------------------
 velB <- read_rds("data/velocityB.rds")
 velG <- read_rds("data/velocityG.rds")
+
+# full data set
 bg.mat <- read_rds("data/birdgreen.rds") %>% 
+  mutate(vArrMag_log = log(vArrMag),
+         vGrMag_log = log(vGrMag))
+# only late years
+bg.mat <- read_rds("data/birdgreenLATE.rds") %>% 
   mutate(vArrMag_log = log(vArrMag),
          vGrMag_log = log(vGrMag))
 
@@ -39,7 +45,7 @@ bg.mat <- read_rds("data/birdgreen.rds") %>%
 (bgs11 <-lmer(data = bg.mat, vArrMag_log ~ vGrMag_log + cell_lat + (1|cell) + (1|species) + (1|year) + AnomLag))
 (bgs12 <-lmer(data = bg.mat, vArrMag_log ~ vGrMag_log + (1|cell) + (1|species) + AnomLag))
 
-(taic1 <- AIC(bgs1,bgs2,bgs3,bgs4,bgs5,bgs6,bgs7,bgs8,bgs9,bgs10,bgs11,bgs12) %>% arrange(AIC))  # bgs1 best, but bgs2 is close enough and simpler
+head(taic1 <- AIC(bgs1,bgs2,bgs3,bgs4,bgs5,bgs6,bgs7,bgs8,bgs9,bgs10,bgs11,bgs12) %>% arrange(AIC))  # bgs1 best, but bgs2 is close enough and simpler
 sjPlot::tab_model(get(rownames(taic1)[1]),
                   show.re.var= TRUE, 
                   pred.labels =c("Intercept", "Green-up speed","Latitude", "Lag"),
@@ -131,6 +137,25 @@ sjPlot::tab_model(get(rownames(taic4)[1]),
                   dv.labels= glue("Green-up speed - model {rownames(taic4)[1]}"),
                   digits = 3)
 
+# Year and Green-up speed -------------------
+(yg1 <- lmer(data = bg.mat, AnomVGr ~ year + (1|cell) + (1|species)))
+(yg2 <- lmer(data = bg.mat, AnomVGr ~ year + (1|cell)))
+(yg3 <- lmer(data = bg.mat, AnomVGr ~ year + (1|species)))
+(yg4  <-  lm(data = bg.mat, AnomVGr ~ year))
+(yg5  <-  lm(data = bg.mat, AnomVGr ~ as.factor(year)))
+
+(taic6 <- AIC(yg1,yg2,yg3,yg4,yg5) %>% arrange(AIC))  
+sjPlot::tab_model(get(rownames(taic6)[1]),
+                  show.re.var= TRUE, 
+                  pred.labels = as.character(seq(2009,2017,1)),
+                  dv.labels= glue("Lag - model {rownames(taic6)[1]}"),
+                  digits = 3)
+
+ggplot(data = bg.mat, aes(x = year, y = AnomVGr), col = "black") +
+  #geom_point() +
+  geom_boxplot(aes(x = factor(year), y = AnomVGr)) +
+  geom_hline(yintercept = 0, color = "red") 
+
 # ANOMALIES  -----------------------------
 # Bird speed with Lag --------------------------
 # nothing is significant with log lag
@@ -162,28 +187,9 @@ lattice::xyplot(fitted(get(rownames(taic5)[1]))~eval(parse(text =
                 xlab = names(fixef(get(rownames(taic5)[1])))[-1],
                 ylab = "vArrMag_log")
 
-# Year and Lags -------------------
-#not significantly different
-(yl1 <- lmer(data = bg.mat, AnomLag ~ year + (1|cell) + (1|species)))
-(yl2 <- lmer(data = bg.mat, AnomLag ~ year + (1|cell)))
-(yl3 <- lmer(data = bg.mat, AnomLag ~ year + (1|species)))
-(yl4  <-  lm(data = bg.mat, AnomLag ~ year))
-(yl5  <-  lm(data = bg.mat, AnomLag ~ as.factor(year)))
-
-(taic6 <- AIC(yl1,yl2,yl3,yl4,yl5) %>% arrange(AIC))  
-sjPlot::tab_model(get(rownames(taic6)[1]),
-                  show.re.var= TRUE, 
-                  pred.labels =c("Intercept","Year"),
-                  dv.labels= glue("Lag - model {rownames(taic6)[1]}"),
-                  digits = 3)
-
-ggplot(data = bg.mat, aes(x = year, y = AnomLag), col = "black") +
-  #geom_point() +
-  geom_boxplot(aes(x = factor(year), y = AnomLag)) +
-  geom_hline(yintercept = 0, color = "red") 
 
 ## which species are late? plot with species ordered in lag
-# kid of different results wit log and no log
+# kind of different results wit log and no log
 ggplot(data = bg.mat, 
        aes(x = reorder(species, -AnomLag, FUN = median, na.rm = TRUE), y = AnomLag)) +
   #geom_point() +
@@ -193,9 +199,79 @@ ggplot(data = bg.mat,
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         axis.title.x = element_blank())
 
-## predictions plots for each model
+# Year and Lags -------------------
+(yl1 <- lmer(data = bg.mat, AnomLag ~ year + (1|cell) + (1|species)))
+(yl2 <- lmer(data = bg.mat, AnomLag ~ year + (1|cell)))
+(yl3 <- lmer(data = bg.mat, AnomLag ~ year + (1|species)))
+(yl4  <-  lm(data = bg.mat, AnomLag ~ year))
+(yl5  <-  lm(data = bg.mat, AnomLag ~ as.factor(year)))
 
-## maps plots - color of the arrow range of magnitude
+(taic7 <- AIC(yl1,yl2,yl3,yl4,yl5) %>% arrange(AIC))  
+sjPlot::tab_model(get(rownames(taic7)[1]),
+                  show.re.var= TRUE, 
+                  pred.labels = as.character(seq(2009,2017,1)),
+                  dv.labels= glue("Lag - model {rownames(taic7)[1]}"),
+                  digits = 3)
 
+ggplot(data = bg.mat, aes(x = year, y = AnomLag), col = "black") +
+  #geom_point() +
+  geom_boxplot(aes(x = factor(year), y = AnomLag)) +
+  geom_hline(yintercept = 0, color = "red") 
 
+# Lag varying according to arrival date --------------------------
+# nothing is significant with log lag
+(ld1 <- lmer(data = bg.mat, lag ~ arr_GAM_mean + (1|cell) + (1|species) + (1|year)))
+(ld2 <- lmer(data = bg.mat, lag ~ arr_GAM_mean + (1|cell) + (1|species)))
+(ld3 <- lmer(data = bg.mat, lag ~ arr_GAM_mean + (1|cell) + (1|year)))
+(ld4 <- lmer(data = bg.mat, lag ~ arr_GAM_mean + (1|species) + (1|year)))
+(ld5 <- lmer(data = bg.mat, lag ~ arr_GAM_mean + (1|cell) ))
+(ld6 <- lmer(data = bg.mat, lag ~ arr_GAM_mean + (1|species)))
+(ld7 <- lmer(data = bg.mat, lag ~ arr_GAM_mean + (1|year)))
+(ld8 <- lm(data = bg.mat, lag ~ arr_GAM_mean))
+(ld9 <- lmer(data = bg.mat, lag ~ arr_GAM_mean + cell_lat + (1|cell)+ (1|species)))
 
+(taic8 <- AIC(ld1,ld2,ld3,ld4,ld5,ld6,ld7,ld8,ld9) %>% arrange(AIC))  
+sjPlot::tab_model(get(rownames(taic8)[1]),
+                  show.re.var= TRUE, 
+                  pred.labels =c("Intercept", "Lag"),
+                  dv.labels= glue("Bird speed - model {rownames(taic8)[1]}"),
+                  digits = 3)
+
+rownames(taic8)[1]
+
+plot(Effect(paste(names(fixef(get(rownames(taic8)[1])))[-1]), get(rownames(taic8)[1])))
+
+lattice::xyplot(fitted(get(rownames(taic8)[1]))~eval(parse(text = 
+                                                             paste(names(fixef(get(rownames(taic8)[1])))[-1]))) | species, 
+                data=bg.mat, type=c('r'), auto.key=F, cex=0.1,
+                par.strip.text=list(cex=0.5), 
+                xlab = names(fixef(get(rownames(taic8)[1])))[-1],
+                ylab = "lag")
+## which species are late? plot with species ordered in lag
+# kind of different results wit log and no log
+ggplot(data = bg.mat, 
+       aes(x = reorder(species, -lag, FUN = median, na.rm = TRUE), y = lag)) +
+  #geom_point() +
+  geom_boxplot() +
+  geom_hline(yintercept = 0, color = "red") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        axis.title.x = element_blank())
+
+ggplot(data = bg.mat, 
+       aes(x = AnomVArr, y = AnomLag)) +
+  geom_point() +
+  geom_hline(yintercept = 0, color = "red") +
+  theme_bw()
+
+ggplot(data = bg.mat, 
+       aes(x = arr_GAM_mean, y = lag)) +
+  geom_point() +
+  geom_hline(yintercept = 0, color = "red") +
+  theme_bw()
+
+ggplot(data = bg.mat, 
+       aes(x = arr_GAM_mean, y = AnomVArr)) +
+  geom_point() +
+  geom_hline(yintercept = 0, color = "red") +
+  theme_bw()
