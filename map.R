@@ -13,7 +13,7 @@ library(geosphere)
 
 ##  Bird arrival date map - TAB 2 ----------------------------
 ## load data
-arr_master <- readRDS("MigSen/Data/data_arr.RDS")
+arr_master <- readRDS("~/Library/Mobile Documents/com~apple~CloudDocs/MigratorySensitivity/Data/data_arr.RDS")
 
 tc <- sort(unique(arr_master$cell))
 cellnumbs <- data.frame(cell = tc, 
@@ -57,17 +57,17 @@ pp <- ggplot(data = worldmap, aes(x = long, y = lat,
 
 rm(worldmap)
 
-TAB <- readRDS("MigSen/Data/data_sensi.RDS")
+TAB <- readRDS("~/Library/Mobile Documents/com~apple~CloudDocs/MigratorySensitivity//Data/data_sensi.RDS")
 TAB <- left_join(TAB, cellnumbs, by="cell") %>% 
   dplyr::select(-cell) %>% 
   rename(cell = cell2)
 
-load("MigSen/Data/species_Grid.RData")
+load("~/Library/Mobile Documents/com~apple~CloudDocs/MigratorySensitivity//Data/species_Grid.RData")
 
 
 # Line plot
 # all species
-sensim_df <- readRDS('MigSen/Data/fit_df_tab5.rds')
+sensim_df <- readRDS('~/Library/Mobile Documents/com~apple~CloudDocs/MigratorySensitivity//Data/fit_df_tab5.rds')
 qq <- ggplot(sensim_df, aes(lat, sensim, group = species)) +
   geom_line(size = 1, col = "gray") +
   theme_classic() +
@@ -95,8 +95,8 @@ f1a_bird <- '#2686A0'
 ran_sp <- arr_master3 
 
 #create hex grid
-cell_grid_tab4 <- readRDS("MigSen/Data/master_cell_grid.rds") ## load grid - package not on CRAN
-for_gr <- readRDS('MigSen/Data/for_green-up_dl.rds')
+cell_grid_tab4 <- readRDS("~/Library/Mobile Documents/com~apple~CloudDocs/MigratorySensitivity//Data/master_cell_grid.rds") ## load grid - package not on CRAN
+for_gr <- readRDS('~/Library/Mobile Documents/com~apple~CloudDocs/MigratorySensitivity//Data/for_green-up_dl.rds')
 
 for_gr2 <- left_join(for_gr, cellnumbs, by = "cell") %>% 
   select(-cell) %>% 
