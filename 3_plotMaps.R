@@ -6,6 +6,8 @@
 library(tidyverse)
 library(ggplot2)
 library(viridis)
+library("RColorBrewer")
+library(glue)
 
 # source 'base' maps ----------------------
 # create map
@@ -19,17 +21,18 @@ cellcoor <- read_rds("data/cellcoor.rds")
 
 velB <- left_join(velB, cellcoor, by = "cell")
 
-sps <- "Vireo_olivaceus"   
-year <- 2015
+# sps <- "Vireo_olivaceus"   
+# yearx <- "all"
+# maptype = "hex"
 
-plot_mapvel <- function(sps, year, maptype){ # maptype = map hex hexn
+plot_mapvel <- function(sps, yearx, maptype){ # maptype = map hex hexn
   
-  if(year == "all") {preds2 <- velB %>% 
+  if(yearx == "all") {preds2 <- velB %>% 
     filter(species == sps)}
   
-  if(year != "all") {preds2 <- velB %>% 
+  if(yearx != "all") {preds2 <- velB %>% 
     filter(species == sps,
-           year == year)}
+           year == yearx)}
   
   cell_sps <- sort(unique(velB$cell))
   
@@ -73,22 +76,28 @@ plot_mapvel <- function(sps, year, maptype){ # maptype = map hex hexn
     filter(mag < 9999,
            !is.na(year))
   
-  if(maptype == "map") {base_map <- rr}
+  if(maptype == "map") {base_map <- pp}
     
   if(maptype == "hex") {base_map <- rrb}
     
-  if(maptype == "hexn") {base_map <- pp}
-      
+  if(maptype == "hexn") {base_map <- rr}
+  
+  myPalette <- colorRampPalette(brewer.pal(11, "PuRd"))
+  sc <- scale_colour_gradientn(colours = myPalette(100), limits=c(1, 9))
+  
+  my_breaks2 <- c(200, 600, 1200, 1800, 3000)
+  
+  my_breaks1 <- log(my_breaks2)
+  
   base_map +
     geom_segment(data = preds4, aes(x = cell_lng, y = cell_lat, 
                                     xend = x, yend = y,
                                     group = cell, colour = log(mag)),
                  arrow = arrow(length = unit(0.1, "cm")), size = 1.2) +
-    scale_colour_continuous(type = "viridis", trans = "log"
-                            ) +
-    #scale_fill_binned(type = "viridis") +
-    #scale_colour_gradientn(colors=viridis(3)) +
-    ggtitle(glue("{sps} {year}")) +
+    scale_colour_gradient(trans = "log",breaks = my_breaks1, labels = my_breaks2,
+                          low = "yellow", high = "red"
+                          ) +
+    ggtitle(glue("{sps} {yearx}")) +
     theme_bw() +
     theme(#legend.position = "none",
           panel.grid.major = element_line(color = alpha('black', 0.2),
@@ -107,13 +116,16 @@ plot_mapvel <- function(sps, year, maptype){ # maptype = map hex hexn
           axis.title.y=element_blank(),
           axis.text.y=element_blank(),
           axis.ticks.y=element_blank(),
-          panel.border = element_blank()) 
+          panel.border = element_blank()) #+ sc
 }
 
 plot_mapvel("Tachycineta_bicolor", "all", "hex")
-plot_mapvel("Vireo_olivaceus", "all", "hex")
 plot_mapvel("Setophaga_americana", "all", "hex")
 plot_mapvel("Setophaga_discolor", "all", "hex")
 
 ## plot hexagons within the distribution of a species
+
+## plot green up
+
+plot_mapvel("Vireo_olivaceus", "all", "hexn")
 

@@ -28,6 +28,7 @@ greenup1 <- read_csv(GREENDATA_PATH) %>%
   filter(gr_ncell > 10000)
 greenup1 <- greenup1[,-1]
 
+# cell number in a sequence that starts at 1
 tc <- sort(unique(greenup1$cell))
 cellnumbs <- data.frame(cell = tc, 
                         cell2 = seq(1,length(tc)))
@@ -46,7 +47,8 @@ greenup <- dplyr::left_join(greenup1, cellnumbs, by = "cell") %>%
 
 greenup <- as.data.frame(greenup)
 
-spec <- unique(bird$species)  # species list
+# species list
+spec <- unique(bird$species) 
 
 # get the neighbor set for each cell within a set buffer --------------------------
 minNeigh <- 5   # threshold to calculate only velocities that had at least 5 number of neighbors
@@ -65,6 +67,11 @@ cells <- as.tibble(cells)
 cells <- cells %>% 
   mutate(adj = adj,
          numn = num)
+
+# create weights for the regression analysis - STILL WORKING ON THAT!!!
+#bird <- bird %>% 
+#  mutate(weight = exp(-(2008 - year)/9))
+
 # calculate velocity for birds --------------------------
 velocityB <- data.frame(spec = c(), year = c(), cell = c(), N = c(), vArrMag = c(),vGrMag = c())
 
@@ -253,8 +260,6 @@ for(i in 1:nrow(predsG)){
 
 # join green up and bird velocity data -----------------
 # merge green up and bird velocity data
-
-# merge green up and bird velocity data
 all <- base::merge(bird, greenup[ ,c("year","cell","gr_mn","gr_ncell")], all.x = TRUE)
 velocityB <- velocityB %>% 
   mutate(cell = as.integer(cell)) %>% 
@@ -296,6 +301,7 @@ for (a in 1:nrow(cellspec)){  # loop in a cell and species
   dat.temp <- subset(all, cellspec[a,1] == cell & cellspec[a,2] == species)
   if (nrow(dat.temp) >= 8){  # at least 8 years of data
     Anom <- apply(dat.temp[,c("arr_GAM_mean","gr_mn","vArrMag","vGrMag","lag")], 2, function(x) scale(log(x), scale = FALSE))
+    # divide by mean but not dividing by sd
     colnames(Anom) <- c("AnomDArr", "AnomDGr", "AnomVArr", "AnomVGr", "AnomLag")
     dat.temp <- cbind(dat.temp, Anom)
     final <- rbind(final, dat.temp)
@@ -306,12 +312,16 @@ final2 <- final %>%
   mutate(cell_lat = scale(cell_lat, scale = FALSE))  #scale lat for regression analysis
 
 # save output tibbles to run models
+## velocities of rbird and green up
 saveRDS(velocityB, file = "data/velocityB.rds")
 saveRDS(velocityG, file = "data/velocityG.rds")
+## files with the coordinates for the velocity vectors for the map (all years together)
 saveRDS(predsB, file = "data/cellaveB.rds")
 saveRDS(predsG, file = "data/cellaveG.rds")
+## bird and green up velocity merged
 saveRDS(final2, file = "data/birdgreen.rds")
 saveRDS(cells %>% dplyr::select(cell, cell_lat, cell_lng), file = "data/cellcoor.rds")
-
+saveRDS(cellnumbs, file = "data/cellnumbs.rds")
+saveRDS(cells, file = "data/cellnei.rds")
 
 

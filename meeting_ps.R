@@ -44,12 +44,13 @@ sps <- "Vireo_olivaceus"  # middle
 bg.matX <- bg.mat %>% 
   filter(species == sps) %>% 
   mutate(cell = as.factor(cell),
-         AnomVArr = scale(log(vArrMag), scale = FALSE),
-         AnomLag = scale(log(lag), scale = FALSE),
          lat_g = ifelse(cell_lat<34, 'low', ifelse(cell_lat > 34 & cell_lat < 42, "mid", ifelse(cell_lat > 42, "high", "opps"))),
-         year_g = ifelse(year %in% c(2010,2012), "early", (ifelse(year %in% c(2011,2015,2017), "ave", ifelse(year %in% c(2009,2013,2014,2016), "late", "ops")))))
+         year_g = ifelse(year %in% c(2010,2012), "early", (ifelse(year %in% c(2011,2015,2017), "ave", ifelse(year %in% c(2009,2013,2014,2016), "late", "ops")))),
+         fast_g = ifelse(year %in% c(2009,2010,2011,2013,2014),"fast", ifelse(year %in% c(2012,2015,2016,2017), "slow", "ops")))
+  
 bg.matX$lat_g <- factor(bg.matX$lat_g, levels = c("low", "mid", "high"))
 bg.matX$year_g <- factor(bg.matX$year_g, levels = c("early", "ave", "late"))
+bg.matX$fast_g <- factor(bg.matX$fast_g, levels = c("slow", "fast"))
 
 bg.matG <- bg.mat %>% 
   dplyr::select(year, cell, cell_lat, cell_lng, gr_mn, gr_ncell,
@@ -57,11 +58,13 @@ bg.matG <- bg.mat %>%
                 AnomVGr, AnomDGr, AnomLag) %>% 
   mutate(cell = as.factor(cell),
          lat_g = ifelse(cell_lat<34, 'low', ifelse(cell_lat > 34 & cell_lat < 42, "mid", ifelse(cell_lat > 42, "high", "opps"))), 
-         year_g = ifelse(year %in% c(2010,2012), "early", (ifelse(year %in% c(2011,2015,2017), "ave", ifelse(year %in% c(2009,2013,2014,2016), "late", "ops"))))) %>% 
+         year_g = ifelse(year %in% c(2010,2012), "early", (ifelse(year %in% c(2011,2015,2017), "ave", ifelse(year %in% c(2009,2013,2014,2016), "late", "ops")))),
+         fast_g = ifelse(year %in% c(2009,2010,2011,2013,2014),"fast", ifelse(year %in% c(2012,2015,2016,2017), "slow", "ops"))) %>% 
   unique()
 
 bg.matG$lat_g <- factor(bg.matG$lat_g, levels = c("low", "mid", "high")) 
 bg.matG$year_g <- factor(bg.matG$year_g, levels = c("early", "ave", "late"))
+bg.matG$fast_g <- factor(bg.matG$fast_g, levels = c("slow", "fast"))
 
 ## plots  
 # slide 1 --------------------
@@ -72,15 +75,21 @@ ggplot(data = bg.matG, aes(x = year, y = AnomDGr), col = "black") +
   theme_bw() +
   ggtitle(glue("Green-up date anomaly"))
 
+yersvs <- lm(data = bg.matG, AnomDGr ~ as.factor(year)-1)
+sjPlot::tab_model(yersvs,
+                 show.re.var= TRUE, 
+                 digits = 3)
+sjPlot::plot_model(yersvs, sort.est = TRUE, se = T)
+
 # slide 2 -------------------
 bg.matX %>% 
   ggplot() +
   geom_boxplot(aes(x = factor(year), y = vGrMag_log, 
-                   fill = lat_g)) +
-                   #fill = "plum")) +
+                   #fill = lat_g)) +
+                   fill = who)) +
   geom_hline(yintercept = 0, color = "red")  +
-  theme_bw() +
-  ggtitle(glue("{bg.matX$species[1]} speed"))
+  theme_bw() 
+  #ggtitle(glue("{bg.matX$species[1]} speed"))
 
 bg.matX %>% 
   ggplot() +
@@ -92,6 +101,25 @@ bg.matX %>%
   ggtitle(glue("{bg.matX$species[1]} speed anomaly")) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+ba <- bg.matX %>% 
+  group_by(year) %>% 
+  summarise(mean = mean(AnomVArr, na.rm = T))
+
+ga <- bg.matG %>% 
+  group_by(year) %>% 
+  summarise(mean = mean(AnomDGr, na.rm = T))
+
+plot(ga$mean, ba$mean)
+cor(ga$mean, ba$mean)
+
+mean(ba$mean)
+mean(ga$mean)
+
+
+
+
+
 
 ## do birds change their speed according to anomalies in green date?
 
@@ -162,7 +190,6 @@ bg.matX %>%
   #fill = "plum")) +
   geom_hline(yintercept = 0, color = "red")  +
   theme_bw() +
-  ggtitle(glue("{bg.matX$species[1]} speed")) +
   facet_rep_wrap(~year_g, ncol = 3, scales='free_x')
 
 bg.matX %>% 
@@ -193,7 +220,7 @@ plot(Effect(c("AnomDGr"), get(rownames(taic1)[1])))
 plot(Effect(c("cell_lat"), get(rownames(taic1)[1])))
 
 # anom
-(bagd8 <- lm(data = bg.matX, AnomVArr ~ AnomDGr + cell_lat + year_g - 1))
+(bagd8 <- lm(data = bg.matX, AnomVArr ~  cell_lat_s + year_g))
 
 head(taic1 <- AIC(bagd1,bagd2,bagd3,bagd4
                   #,bsgd5,bsgd6
@@ -331,6 +358,7 @@ sjPlot::tab_model(gsyg2,
                   show.re.var= TRUE, 
                   digits = 3)
 
+# slide 6 --------------
 gslyg <- lm(data = bg.matG, AnomVGr ~ cell_lat + year_g + cell_lat * year_g)
 sjPlot::tab_model(gslyg,
                   show.re.var= TRUE, 
@@ -346,6 +374,7 @@ sjPlot::tab_model(gslyb,
 
 plot(Effect(c("year_g","cell_lat"), gslyb))
 
+# slide 7 -------------
 bg.matX %>% 
   #mutate(AnomVArr = scale(vArrMag)) %>% 
   ggplot() +
@@ -357,8 +386,38 @@ bg.matX %>%
   #ggtitle(glue("{bg.matX$species[1]} lag")) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  facet_rep_wrap(~year_g, ncol = 3, repeat.tick.labels = T) + 
+  facet_rep_wrap(~who + year_g , ncol = 3, repeat.tick.labels = T) + 
   geom_smooth(aes(y = lag, x = cell_lat), col = "black", se = F)
+
+bg.matX %>% 
+  #mutate(AnomVArr = scale(vArrMag)) %>% 
+  ggplot() +
+  geom_point(aes(y = vArrMag_log, x = lag, col = as.factor(year))) +
+  #scale_colour_gradient2(low = "red", high = "blue", mid = 'green', na.value = NA) +  #geom_boxplot(aes(x = cell_lat, y = vArrMag_log)) +
+  geom_hline(yintercept = 0, color = "black")  +
+  #ylim(c(-1,1000)) +
+  theme_bw() +
+  #ggtitle(glue("{bg.matX$species[1]} lag")) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  facet_rep_wrap(~who + year_g , ncol = 3, repeat.tick.labels = T) + 
+  geom_smooth(aes(y = vArrMag_log, x = lag), col = "black", se = F)
+
+
+bg.matX %>% 
+  #mutate(AnomVArr = scale(vArrMag)) %>% 
+  ggplot() +
+  geom_point(aes(y = AnomLag, x = cell_lat, col = as.factor(year))) +
+  #scale_colour_gradient2(low = "red", high = "blue", mid = 'green', na.value = NA) +  #geom_boxplot(aes(x = cell_lat, y = vArrMag_log)) +
+  geom_hline(yintercept = 0, color = "black")  +
+  #ylim(c(-1,1000)) +
+  theme_bw() +
+  #ggtitle(glue("{bg.matX$species[1]} lag")) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  facet_rep_wrap(~who + year_g , ncol = 3, repeat.tick.labels = T) + 
+  geom_smooth(aes(y = AnomLag, x = cell_lat), col = "black", se = F)
+
 
 bg.matX %>% 
   group_by(year_g) %>% 
@@ -369,14 +428,16 @@ bg.matX %>%
 
 bg.matX %>% 
   ggplot() +
-  geom_point(aes(y = AnomVArr, x = cell_lat, col = as.factor(year))) +
+  #geom_point(aes(y = AnomVArr, x = cell_lat, col = as.factor(year))) +
   geom_hline(yintercept = 0, color = "black")  +
   theme_bw() +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  facet_rep_wrap(~year_g, ncol = 3, repeat.tick.labels = T) + 
+  facet_rep_wrap(~who + year_g , ncol = 3, repeat.tick.labels = T) + 
   geom_smooth(aes(y = AnomVArr, x = cell_lat), col = "plum", se = F) +
-  geom_smooth(aes(y = AnomVGr, x = cell_lat), col = "darkolivegreen", se = F)
+  geom_smooth(data = bg.matG, aes(y = AnomVGr, x = cell_lat), col = "darkolivegreen", se = F)
+  #geom_smooth(aes(y = vArrMag, x = cell_lat), col = "plum", se = F) +
+  #geom_smooth(aes(y = vGrMag, x = cell_lat), col = "darkolivegreen", se = F)
 
 ggplot(data = bg.matG, aes(x = cell_lat, y = AnomVGr), col = "black") +
   geom_point() +
@@ -386,12 +447,17 @@ ggplot(data = bg.matG, aes(x = cell_lat, y = AnomVGr), col = "black") +
   ggtitle(glue("Green-up speed anomaly")) +
   facet_rep_wrap(~year_g, ncol = 3)
 
-myPalette <- colorRampPalette(brewer.pal(11, "PRGn"))
-sc <- scale_colour_gradientn(colours = myPalette(100), limits=c(-30,40))
+# slide 8 ------------
+myPalette <- colorRampPalette(terrain.colors(3))
+sc <- scale_colour_gradientn(colours = myPalette(10), 
+                             limits=c(-20,30))
+                             #limits=c(30,45))
 
 bg.matX %>% 
   ggplot() +
-  geom_point(aes(x = AnomVGr, y = AnomVArr, col = lag)) +
+  geom_point(aes(x = AnomVGr, y = AnomVArr, 
+                 col = lag)) +
+  #               col = cell_lat)) +
   geom_hline(yintercept = 0, color = "red")  +
   geom_vline(xintercept = 0, color = "red")  +
   theme_bw() +
@@ -401,194 +467,230 @@ bg.matX %>%
 #geom_abline(intercept = 0, slope = 1, size = 0.5)
 #geom_smooth(aes(x = AnomDGr, y = AnomDArr, col = cell_lat), method = "lm")
 
-corrplot(M, method="circle")
+ggplot(bg.matG, aes(x=lat_g, y=AnomVGr)) + 
+  geom_violin(fill = "darkolivegreen", alpha = 0.5) +
+  theme_bw() +
+  geom_boxplot(width=0.1) +
+  geom_hline(yintercept = 0, color = "red") +
+  stat_summary(fun.y=mean, geom="point", shape=23, size=2, fill = "blue") +
+  facet_rep_wrap(~year_g)
+
+ggplot(bg.matG, aes(x=year_g, y=AnomVGr)) + 
+  geom_violin(fill = "darkolivegreen", alpha = 0.5) +
+  theme_bw() +
+  geom_boxplot(width=0.1) +
+  geom_hline(yintercept = 0, color = "red") +
+  stat_summary(fun.y=mean, geom="point", shape=23, size=2, fill = "blue") 
+
+ggplot(bg.matX, aes(x=lat_g, y=AnomVArr)) + 
+  geom_violin(fill = "plum", alpha = 0.5) +
+  theme_bw() +
+  geom_boxplot(width=0.1) +
+  geom_hline(yintercept = 0, color = "red") +
+  stat_summary(fun.y=mean, geom="point", shape=23, size=2, fill = "blue") +
+  facet_rep_wrap(~year_g, nrow = 1) #+ coord_flip()
+
+ggplot(bg.matX, aes(x=year_g, y=AnomVArr)) + 
+  geom_violin(fill = "plum", alpha = 0.5) +
+  theme_bw() +
+  geom_boxplot(width=0.1) +
+  geom_hline(yintercept = 0, color = "red") +
+  stat_summary(fun.y=mean, geom="point", shape=23, size=2, fill = "blue") #+ coord_flip()
 
 
 
+# cor tab ------
 
+cortab1 <- bg.matX %>% 
+  dplyr::select(cell_lat, year, #lat_g, year_g,
+                arr_GAM_mean, gr_mn, AnomDArr, AnomDGr, lag, AnomLag,
+                vArrMag, vGrMag, AnomVArr, AnomVGr
+                )
 
+cortab2 <- cor(cortab1, use = "na.or.complete")
+corrplot(cortab2,
+         method="color", 
+         type="upper", order="hclust", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         diag=FALSE 
+)
 
+# slide 9 -------------------
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-ggplot(bg.matG) +
-  geom_point(aes(x = cell_lat, y = AnomVGr)) +
-  #geom_boxplot(aes(x = factor(year), y = AnomVArr)) +
+bg.matX %>% 
+  ggplot() +
+  geom_boxplot(aes(x = factor(year), y = vGrMag_log, 
+                   fill = fast_g)) +
+  #fill = "plum")) +
   geom_hline(yintercept = 0, color = "red")  +
-  #ylim(c(-1,2)) +
   theme_bw() +
-  ggtitle(glue("green up speed anomaly")) +
-  facet_wrap(~year)
+  ggtitle(glue("{bg.matX$species[1]} speed"))
 
-(gal1 <- lmer(data = bg.matG, AnomVGr ~ cell_lat + (1|cell) + (1|year)))
-(gal2 <- lmer(data = bg.matG, AnomVGr ~ cell_lat + (1|year)))
-(gal3 <- lmer(data = bg.matG, AnomVGr ~ cell_lat + (1|cell)))
-(gal4 <- lmer(data = bg.matG, AnomVGr ~ cell_lat + I(cell_lat^2) +(1|cell) + (1|year)))
-(gal5 <- lmer(data = bg.matG, AnomVGr ~ cell_lat + I(cell_lat^2) +(1|year)))
-(gal6 <- lmer(data = bg.matG, AnomVGr ~ cell_lat + I(cell_lat^2) +(1|cell)))
-(gal7 <- lmer(data = bg.matG, abs(AnomVGr) ~ cell_lat + (1|cell) + (1|year)))
-(gal8 <- lmer(data = bg.matG, abs(AnomVGr) ~ cell_lat + (1|year)))
-(gal9 <- lmer(data = bg.matG, abs(AnomVGr) ~ cell_lat + (1|cell)))
-(gal10 <- lmer(data = bg.matG, abs(AnomVGr) ~ cell_lat + (1|cell) + (1|year) + I(cell_lat^2)))
-(gal11 <- lmer(data = bg.matG, abs(AnomVGr) ~ cell_lat + (1|year) + I(cell_lat^2)))
-(gal12 <- lmer(data = bg.matG, abs(AnomVGr) ~ cell_lat + (1|cell) + I(cell_lat^2)))
+bg.matX %>% 
+  ggplot() +
+  geom_boxplot(aes(x = factor(year), y = AnomVArr, 
+                   fill = fast_g)) +
+  #fill = "plum")) +
+  geom_hline(yintercept = 0, color = "red")  +
+  theme_bw() +
+  ggtitle(glue("{bg.matX$species[1]} speed anomaly")) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-(taig1 <- AIC(gal1,gal2,gal3,gal4,gal5,gal6,gal7,gal8,gal9,gal10,gal11,gal12) %>% arrange(AIC))  
-sjPlot::tab_model(get(rownames(taig1)[1]),
+#
+ggplot(data = bg.matG, aes(x = year, y = AnomVGr), col = "black") +
+  #geom_point() +
+  geom_boxplot(aes(x = factor(year), y = AnomVGr), fill = "darkolivegreen4") +
+  geom_hline(yintercept = 0, color = "red") +
+  theme_bw() +
+  ggtitle(glue("Green-up date anomaly")) +
+  facet_rep_wrap(~fast_g, ncol = 3, scales='free_x')
+
+ggplot(data = bg.matX, aes(x = year, y = AnomVArr), col = "black") +
+  #geom_point() +
+  geom_boxplot(aes(x = factor(year), y = AnomVArr), fill = "plum") +
+  geom_hline(yintercept = 0, color = "red") +
+  theme_bw() +
+  ggtitle(glue("Green-up date anomaly")) +
+  facet_rep_wrap(~fast_g, ncol = 3, scales='free_x')
+
+
+bg.matX %>% 
+  ggplot() +
+  geom_boxplot(aes(x = factor(year), y = vGrMag_log, 
+                   fill = lat_g)) +
+  #fill = "plum")) +
+  geom_hline(yintercept = 0, color = "red")  +
+  theme_bw() +
+  ggtitle(glue("{bg.matX$species[1]} speed")) +
+  facet_rep_wrap(~fast_g, ncol = 3, scales='free_x')
+
+bg.matX %>% 
+  ggplot() +
+  geom_boxplot(aes(x = factor(year), y = AnomVArr, 
+                   fill = lat_g)) +
+  #fill = "plum")) +
+  geom_hline(yintercept = 0, color = "red")  +
+  theme_bw() +
+  ggtitle(glue("{bg.matX$species[1]} speed anomaly")) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  facet_rep_wrap(~fast_g, ncol = 3, scales='free_x')
+
+# slide 10 ---------
+gslfg <- lm(data = bg.matG, AnomVGr ~ cell_lat + fast_g + cell_lat * fast_g)
+sjPlot::tab_model(gslfg,
                   show.re.var= TRUE, 
-                  #pred.labels =c("Intercept", "Latitude", "Lag"),
-                  #dv.labels= glue("Bird Migration speed anomaly - model {rownames(taig1)[1]}"),
                   digits = 3)
 
+plot(Effect(c("fast_g","cell_lat"), gslfg))
 
-(gsl1 <- lmer(data = bg.matG, vGrMag_log ~ cell_lat + (1|cell) + (1|year)))
-(gsl2 <- lmer(data = bg.matG, vGrMag_log ~ cell_lat + (1|year)))
-(gsl3 <- lmer(data = bg.matG, vGrMag_log ~ cell_lat + (1|cell)))
-(gsl4 <- lmer(data = bg.matG, vGrMag_log ~ cell_lat + I(cell_lat^2) +(1|cell) + (1|year)))
-(gsl5 <- lmer(data = bg.matG, vGrMag_log ~ cell_lat + I(cell_lat^2) +(1|year)))
-(gsl6 <- lmer(data = bg.matG, vGrMag_log ~ cell_lat + I(cell_lat^2) +(1|cell)))
-(gsl7 <- lmer(data = bg.matG, abs(vGrMag_log) ~ cell_lat + (1|cell) + (1|year)))
-(gsl8 <- lmer(data = bg.matG, abs(vGrMag_log) ~ cell_lat + (1|year)))
-(gsl9 <- lmer(data = bg.matG, abs(vGrMag_log) ~ cell_lat + (1|cell)))
-(gsl10 <- lmer(data = bg.matG, abs(vGrMag_log) ~ cell_lat + (1|cell) + (1|year) + I(cell_lat^2)))
-(gsl11 <- lmer(data = bg.matG, abs(vGrMag_log) ~ cell_lat + (1|year) + I(cell_lat^2)))
-(gsl12 <- lmer(data = bg.matG, abs(vGrMag_log) ~ cell_lat + (1|cell) + I(cell_lat^2)))
 
-(taig2 <- AIC(gsl1,gsl2,gsl3,gsl4,gsl5,gsl6,gsl7,gsl8,gsl9,gsl10,gsl11,gsl12) %>% arrange(AIC))  
-sjPlot::tab_model(get(rownames(taig2)[1]),
+gslfb <- lm(data = bg.matX, AnomVArr ~ cell_lat + fast_g + cell_lat * fast_g)
+sjPlot::tab_model(gslfb,
                   show.re.var= TRUE, 
-                  #pred.labels =c("Intercept", "Latitude", "Lag"),
                   digits = 3)
-  
-  
-  
+
+plot(Effect(c("fast_g","cell_lat"), gslfb))
+
+bg.matX %>% 
+  #mutate(AnomVArr = scale(vArrMag)) %>% 
+  ggplot() +
+  geom_point(aes(y = lag, x = cell_lat, col = as.factor(year))) +
+  #scale_colour_gradient2(low = "red", high = "blue", mid = 'green', na.value = NA) +  #geom_boxplot(aes(x = cell_lat, y = vArrMag_log)) +
+  geom_hline(yintercept = 0, color = "black")  +
+  #ylim(c(-1,1000)) +
+  theme_bw() +
+  #ggtitle(glue("{bg.matX$species[1]} lag")) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  facet_rep_wrap(~fast_g, ncol = 3, repeat.tick.labels = T) + 
+  geom_smooth(aes(y = lag, x = cell_lat), col = "black", se = F)
+
+bg.matX %>% 
+  ggplot() +
+  #geom_point(aes(y = AnomVArr, x = cell_lat, col = as.factor(year))) +
+  geom_hline(yintercept = 0, color = "black")  +
+  theme_bw() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  facet_rep_wrap(~fast_g, ncol = 3, repeat.tick.labels = T) + 
+  geom_smooth(aes(y = AnomVArr, x = cell_lat), col = "plum", se = F) +
+  geom_smooth(aes(y = AnomVGr, x = cell_lat), col = "darkolivegreen", se = F)
+#geom_smooth(aes(y = vArrMag, x = cell_lat), col = "plum", se = F) +
+#geom_smooth(aes(y = vGrMag, x = cell_lat), col = "darkolivegreen", se = F)
+
+
+## is green up faster on north?
+gslyg2 <- lm(data = bg.matG, vGrMag ~ cell_lat + year_g + cell_lat * year_g)
+sjPlot::tab_model(gslyg2,
+                  show.re.var= TRUE, 
+                  digits = 3)
+
+plot(Effect(c("year_g","cell_lat"), gslyg2))
+plot(Effect(c("cell_lat"), gslyg2))
+
+gsl <- lm(data = bg.matG, vGrMag ~ cell_lat)
+sjPlot::tab_model(gsl,
+                  show.re.var= TRUE, 
+                  digits = 3)
+
+plot(Effect(c("cell_lat"), gsl))
+
+ggplot(bg.matG, aes(x = cell_lat, y = vGrMag_log)) +
+  geom_point() +
+  geom_smooth()
+
+ggplot(bg.matG, aes(x = cell_lat, y = AnomVGr)) +
+  geom_point() +
+  geom_smooth()
+
+# are the more sensitive species varying their speed the most, or can they go faster?
+
+ggplot(bg.matG, aes(x = AnomDGr, y = AnomVGr)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+sd(bg.mat$AnomVArr, na.rm = T)
+sd(bg.matX$AnomVArr, na.rm = T)
+sd(bg.matG$AnomVGr, na.rm = T)
+
+sd(bg.mat$vArrMag, na.rm = T)
+sd(bg.matX$vArrMag, na.rm = T)
+sd(bg.matG$vGrMag, na.rm = T)
+
 bg.mat %>% 
-dplyr::select(year, cell, cell_lat, cell_lng, gr_mn, gr_ncell,
-              NGr, vGrMag, vGrAng, angG, xG, yG, vGrMag_log,
-              AnomVGr, AnomDGr, AnomLag) %>% 
-unique() %>% 
-#filter(year == 2017) %>% 
-#mutate(AnomVArr = scale(vArrMag)) %>% 
 ggplot() +
-geom_point(aes(x = cell_lat, y = AnomDGr)) +
-#geom_boxplot(aes(x = factor(year), y = AnomVArr)) +
-geom_hline(yintercept = 0, color = "red")  +
-#ylim(c(-1,2)) +
-theme_bw() +
-facet_wrap(~year)
-
-
-## bird! -------------
-
-myPalette <- colorRampPalette(brewer.pal(11, "PuRd"))
-sc <- scale_colour_gradientn(colours = myPalette(100), limits=c(-30,30))
-
-
-
-bg.matX %>% 
-  filter(year %in% c(2009,2012)) %>% 
-  #mutate(AnomVArr = scale(vArrMag)) %>% 
-  ggplot() +
-  geom_point(aes(y = AnomVGr, x = cell_lat), col = "darkolivegreen") +
-  geom_point(aes(y = AnomVArr, x = cell_lat), col = "deeppink") +
-  #scale_colour_gradient2(low = "red", high = "blue", mid = 'green', na.value = NA) +  #geom_boxplot(aes(x = cell_lat, y = vArrMag_log)) +
-  geom_hline(yintercept = 0, color = "black")  +
+  geom_boxplot(aes(x = reorder(species, -AnomVArr, FUN = median, na.rm = TRUE), y = AnomVArr)) +
+  geom_hline(yintercept = 0, color = "red")  +
   #ylim(c(-1,1000)) +
   theme_bw() +
-  #ggtitle(glue("{bg.matX$species[1]} lag")) +
+  ggtitle(glue("speed")) +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  facet_rep_wrap(~year, ncol = 1, repeat.tick.labels = T) + #sc +
-  #geom_abline(intercept = 0, slope = 1, size = 0.5)
-  geom_smooth(aes(y = AnomVGr, x = cell_lat), col = "darkolivegreen", se = F) +
-  geom_smooth(aes(y = AnomVArr, x = cell_lat), col = "deeppink", se = F) +
-  geom_smooth(aes(y = AnomLag, x = cell_lat), col = "orange", se = F)
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+#geom_smooth(aes(x = cell_lat, y = lag), method = "lm")
 
-# can green up vary more than birds can? :(
-
-bg.matX %>% select(year, vArrMag_log, vGrMag_log) %>%
-  pivot_longer(., cols = c(vArrMag_log, vGrMag_log), 
-               names_to = "Var", values_to = "Val") %>%
-  mutate(Var2 = ifelse(Var == 'vArrMag_log', '2_vArrMag_log', '1_vGrMag_log')) %>% 
-  ggplot(aes(x = as.factor(year), y = Val, fill = Var2)) +
-  geom_boxplot() + theme_bw()
-
-bg.matX %>% select(year, vArrMag_log, vGrMag_log) %>%
-  pivot_longer(., cols = c(vArrMag_log, vGrMag_log), 
-               names_to = "Var", values_to = "Val") %>%
-  mutate(Var2 = ifelse(Var == 'vArrMag_log', '2_vArrMag_log', '1_vGrMag_log')) %>% 
-  ggplot(aes(x = year, y = Val, fill = Var2)) +
-  geom_boxplot() + theme_bw()
-
-bg.matX %>% select(year, AnomVArr, AnomVGr) %>%
-  pivot_longer(., cols = c(AnomVGr, AnomVArr), 
-               names_to = "Var", values_to = "Val") %>%
-  mutate(Var2 = ifelse(Var == 'AnomVArr', '2_AnomVArr', '1_AnomVGr')) %>% 
-  ggplot(aes(x = as.factor(year), y = Val, fill = Var2)) +
-  geom_boxplot() + theme_bw()
-
-bg.matX %>% select(year, AnomVArr, AnomVGr) %>%
-  pivot_longer(., cols = c(AnomVArr, AnomVGr), 
-               names_to = "Var", values_to = "Val") %>%
-  mutate(Var2 = ifelse(Var == 'AnomVArr', '2_AnomVArr', '1_AnomVGr')) %>% 
-  ggplot(aes(x = year, y = Val, fill = Var2)) +
-  geom_boxplot() + theme_bw()
- 
-
-bg.matX %>% 
-  filter(year %in% c(2009,2012)) %>% 
-  #mutate(AnomVArr = scale(vArrMag)) %>% 
+bg.mat %>% 
   ggplot() +
-  geom_point(aes(y = lag, x = cell_lat), col = "orange") +
-  #scale_colour_gradient2(low = "red", high = "blue", mid = 'green', na.value = NA) +  #geom_boxplot(aes(x = cell_lat, y = vArrMag_log)) +
-  geom_hline(yintercept = 0, color = "black")  +
+  geom_boxplot(aes(x = as.factor(year), y = AnomVArr)) +
+  geom_hline(yintercept = 0, color = "red")  +
   #ylim(c(-1,1000)) +
   theme_bw() +
-  #ggtitle(glue("{bg.matX$species[1]} lag")) +
+  ggtitle(glue("speed")) +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  facet_rep_wrap(~year, ncol = 1, repeat.tick.labels = T) + 
-  geom_smooth(aes(y = lag, x = cell_lat), col = "orange", se = F)
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+#geom_smooth(aes(x = cell_lat, y = lag), method = "lm")
 
-bg.matX %>% 
-  filter(year %in% c(2009,2012)) %>% 
-  #mutate(AnomVArr = scale(vArrMag)) %>% 
+bg.matG %>% 
   ggplot() +
-  geom_point(aes(y = lag, x = cell_lat), col = "orange") +
-  #scale_colour_gradient2(low = "red", high = "blue", mid = 'green', na.value = NA) +  #geom_boxplot(aes(x = cell_lat, y = vArrMag_log)) +
-  geom_hline(yintercept = 0, color = "black")  +
+  geom_boxplot(aes(x = as.factor(year), y = AnomVGr)) +
+  geom_hline(yintercept = 0, color = "red")  +
   #ylim(c(-1,1000)) +
   theme_bw() +
-  #ggtitle(glue("{bg.matX$species[1]} lag")) +
+  ggtitle(glue("speed")) +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  facet_rep_wrap(~year, ncol = 1, repeat.tick.labels = T) + 
-  geom_smooth(aes(y = lag, x = cell_lat), col = "orange", se = F)
-
-bg.matX %>% 
-  #filter(year %in% c(2009,2012)) %>% 
-  #mutate(AnomVArr = scale(vArrMag)) %>% 
-  ggplot() +
-  geom_boxplot(aes(y = lag, x = as.factor(year)), col = "orange") +
-  #scale_colour_gradient2(low = "red", high = "blue", mid = 'green', na.value = NA) +  #geom_boxplot(aes(x = cell_lat, y = vArrMag_log)) +
-  geom_hline(yintercept = 0, color = "black")  
-  
-bg.matX %>% 
-  #filter(year %in% c(2009,2012)) %>% 
-  #mutate(AnomVArr = scale(vArrMag)) %>% 
-  ggplot() +
-  geom_boxplot(aes(y = vArrMag_log, x = as.factor(year))) 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 
 
 

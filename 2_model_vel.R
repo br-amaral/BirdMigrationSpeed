@@ -32,18 +32,18 @@ bg.mat <- read_rds("data/birdgreenLATE.rds") %>%
 # VELOCITY --------------------
 # Bird speed and Green-up Speed -----------------
 # only latitude is significant - faster north
-(bgs1 <- lmer(data = bg.mat, vArrMag_log ~ vGrMag_log + (1|cell) + (1|species) + (1|year)))
-(bgs2 <- lmer(data = bg.mat, vArrMag_log ~ vGrMag_log + (1|cell) + (1|species)))
-(bgs3 <- lmer(data = bg.mat, vArrMag_log ~ vGrMag_log + (1|cell) + (1|year)))
-(bgs4 <- lmer(data = bg.mat, vArrMag_log ~ vGrMag_log + (1|species) + (1|year)))
-(bgs5 <- lmer(data = bg.mat, vArrMag_log ~ vGrMag_log + (1|cell) ))
-(bgs6 <- lmer(data = bg.mat, vArrMag_log ~ vGrMag_log + (1|species)))
-(bgs7 <- lmer(data = bg.mat, vArrMag_log ~ vGrMag_log + (1|year)))
-(bgs8 <-   lm(data = bg.mat, vArrMag_log ~ vGrMag_log))
-(bgs9 <- lmer(data = bg.mat, vArrMag_log ~ vGrMag_log + cell_lat + (1|cell)+ (1|species)))
-(bgs10 <-lmer(data = bg.mat, vArrMag_log ~ vGrMag_log + cell_lat + (1|cell)+ (1|species) + (1|year)))
-(bgs11 <-lmer(data = bg.mat, vArrMag_log ~ vGrMag_log + cell_lat + (1|cell) + (1|species) + (1|year) + AnomLag))
-(bgs12 <-lmer(data = bg.mat, vArrMag_log ~ vGrMag_log + (1|cell) + (1|species) + AnomLag))
+(bgs1 <- lmer(data = bg.matX, vArrMag_log ~ vGrMag_log + (1|cell) + (1|species) + (1|year)))
+(bgs2 <- lmer(data = bg.matX, vArrMag_log ~ vGrMag_log + (1|cell) + (1|species)))
+(bgs3 <- lmer(data = bg.matX, vArrMag_log ~ vGrMag_log + (1|cell) + (1|year)))
+(bgs4 <- lmer(data = bg.matX, vArrMag_log ~ vGrMag_log + (1|species) + (1|year)))
+(bgs5 <- lmer(data = bg.matX, vArrMag_log ~ vGrMag_log + (1|cell) ))
+(bgs6 <- lmer(data = bg.matX, vArrMag_log ~ vGrMag_log + (1|species)))
+(bgs7 <- lmer(data = bg.matX, vArrMag_log ~ vGrMag_log + (1|year)))
+(bgs8 <-   lm(data = bg.matX, vArrMag_log ~ vGrMag_log))
+(bgs9 <- lmer(data = bg.matX, vArrMag_log ~ vGrMag_log + cell_lat + (1|cell)+ (1|species)))
+(bgs10 <-lmer(data = bg.matX, vArrMag_log ~ vGrMag_log + cell_lat + (1|cell)+ (1|species) + (1|year)))
+(bgs11 <-lmer(data = bg.matX, vArrMag_log ~ vGrMag_log + cell_lat + (1|cell) + (1|species) + (1|year) + AnomLag))
+(bgs12 <-lmer(data = bg.matX, vArrMag_log ~ vGrMag_log + (1|cell) + (1|species) + AnomLag))
 
 head(taic1 <- AIC(bgs1,bgs2,bgs3,bgs4,bgs5,bgs6,bgs7,bgs8,bgs9,bgs10,bgs11,bgs12) %>% arrange(AIC))  # bgs1 best, but bgs2 is close enough and simpler
 sjPlot::tab_model(get(rownames(taic1)[1]),
@@ -124,11 +124,16 @@ plot(Effect(c("cell_lat"), get(rownames(taic3)[1])))
 plot(Effect(c("AnomLag"), get(rownames(taic3)[1])))
 
 # Green-up Speed and Latitude  --------------------
-(gsl1 <- lmer(data = bg.mat, vGrMag_log ~ cell_lat + (1|cell) + (1|year)))
-(gsl1.5<-lmer(data = bg.mat, vGrMag_log ~ cell_lat + I(cell_lat^2) + (1|cell) +  (1|year)))
-(gsl2 <- lmer(data = bg.mat, vGrMag_log ~ cell_lat + (1|cell)))
-(gsl3 <- lmer(data = bg.mat, vGrMag_log ~ cell_lat + (1|year)))
-(gsl4 <- lm(data = bg.mat, vGrMag_log ~ cell_lat))
+bg.matG <- bg.mat %>% 
+  dplyr::select(year, cell, cell_lat, cell_lng, gr_mn, gr_ncell,
+                NGr, vGrMag, vGrAng, angG, xG, yG, vGrMag_log) %>% 
+  unique()
+
+(gsl1 <- lmer(data = bg.matG, vGrMag_log ~ cell_lat + (1|cell) + (1|year)))
+(gsl1.5<-lmer(data = bg.matG, vGrMag_log ~ cell_lat + I(cell_lat^2) + (1|cell) +  (1|year)))
+(gsl2 <- lmer(data = bg.matG, vGrMag_log ~ cell_lat + (1|cell)))
+(gsl3 <- lmer(data = bg.matG, vGrMag_log ~ cell_lat + (1|year)))
+(gsl4 <- lm(data = bg.matG, vGrMag_log ~ cell_lat))
 
 (taic4 <- AIC(gsl1,gsl1.5,gsl2,gsl3,gsl4) %>% arrange(AIC))  
 sjPlot::tab_model(get(rownames(taic4)[1]),
@@ -159,15 +164,15 @@ ggplot(data = bg.mat, aes(x = year, y = AnomVGr), col = "black") +
 # ANOMALIES  -----------------------------
 # Bird speed with Lag --------------------------
 # nothing is significant with log lag
-(bsl1 <- lmer(data = bg.mat, vArrMag_log ~ lag + (1|cell) + (1|species) + (1|year)))
-(bsl2 <- lmer(data = bg.mat, vArrMag_log ~ lag + (1|cell) + (1|species)))
-(bsl3 <- lmer(data = bg.mat, vArrMag_log ~ lag + (1|cell) + (1|year)))
-(bsl4 <- lmer(data = bg.mat, vArrMag_log ~ lag + (1|species) + (1|year)))
-(bsl5 <- lmer(data = bg.mat, vArrMag_log ~ lag + (1|cell) ))
-(bsl6 <- lmer(data = bg.mat, vArrMag_log ~ lag + (1|species)))
-(bsl7 <- lmer(data = bg.mat, vArrMag_log ~ lag + (1|year)))
-(bsl8 <- lm(data = bg.mat, vArrMag_log ~ lag))
-(bsl9 <- lmer(data = bg.mat, vArrMag_log ~ lag + cell_lat + (1|cell)+ (1|species)))
+(bsl1 <- lmer(data = bg.mat, AnomVArr ~ AnomDGr + (1|cell) + (1|species) + (1|year)))
+(bsl2 <- lmer(data = bg.mat, AnomVArr ~ AnomDGr + (1|cell) + (1|species)))
+(bsl3 <- lmer(data = bg.mat, AnomVArr ~ AnomDGr + (1|cell) + (1|year)))
+(bsl4 <- lmer(data = bg.mat, AnomVArr ~ AnomDGr + (1|species) + (1|year)))
+(bsl5 <- lmer(data = bg.mat, AnomVArr ~ AnomDGr + (1|cell) ))
+(bsl6 <- lmer(data = bg.mat, AnomVArr ~ AnomDGr + (1|species)))
+(bsl7 <- lmer(data = bg.mat, AnomVArr ~ AnomDGr + (1|year)))
+(bsl8 <- lm(data = bg.mat, AnomVArr ~ AnomDGr))
+(bsl9 <- lmer(data = bg.mat, AnomVArr ~ AnomDGr + cell_lat + (1|cell)+ (1|species)))
 
 (taic5 <- AIC(bsl1,bsl2,bsl3,bsl4,bsl5,bsl6,bsl7,bsl8,bsl9) %>% arrange(AIC))  
 sjPlot::tab_model(get(rownames(taic5)[1]),
@@ -188,7 +193,7 @@ lattice::xyplot(fitted(get(rownames(taic5)[1]))~eval(parse(text =
                 ylab = "vArrMag_log")
 
 
-## which species are late? plot with species ordered in lag
+## which species are late? plot with species ordered in lag - most species are arriving earlier
 # kind of different results wit log and no log
 ggplot(data = bg.mat, 
        aes(x = reorder(species, -AnomLag, FUN = median, na.rm = TRUE), y = AnomLag)) +
@@ -258,20 +263,22 @@ ggplot(data = bg.mat,
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         axis.title.x = element_blank())
 
-ggplot(data = bg.mat, 
-       aes(x = AnomVArr, y = AnomLag)) +
+ggplot(data = bg.matX, 
+       aes(y = AnomVArr, x = AnomVGr)) +
   geom_point() +
   geom_hline(yintercept = 0, color = "red") +
-  theme_bw()
+  theme_bw() +
+  geom_smooth()
 
 ggplot(data = bg.mat, 
        aes(x = arr_GAM_mean, y = lag)) +
   geom_point() +
   geom_hline(yintercept = 0, color = "red") +
-  theme_bw()
+  theme_bw() +
+  geom_smooth(method = "lm")
 
 ggplot(data = bg.mat, 
-       aes(x = arr_GAM_mean, y = AnomVArr)) +
-  geom_point() +
+       aes(y = arr_GAM_mean, x = as.factor(cell_lat))) +
+  geom_boxplot() +
   geom_hline(yintercept = 0, color = "red") +
   theme_bw()
