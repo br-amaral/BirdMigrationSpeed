@@ -159,6 +159,8 @@ draw(mod_gu)
 appraise(mod_gu, method = "simulate")
 ## plots
 
+plot(mod_gu)
+
 plot_smooth(mod_gu, view = "mig_cell") # mig_cel as numeric
 
 
@@ -270,7 +272,33 @@ jtools::effect_plot(mod_gu, pred = mig_cell,
   scale_x_discrete(labels = c("Breeding\ncell","Migratory\ncell")) 
 
 dev.off()
-vis.gam(mod_gu)
+summary(mod_gu)
+plot_smooth(mod_gu, view = c("AnomDGr"))
+
+##
+xrng <- list(AnomDGr = range(final$AnomDGr, na.rm = T),
+             AnomVGr = range(final$AnomVGr, na.rm = T),
+             mig_cell = as.factor(c(T,F)))
+inc.seq <- seq(xrng$AnomDGr[1], xrng$AnomDGr[2], length.out = 25)
+edu.seq <- seq(xrng$AnomVGr[1], xrng$AnomVGr[2], length.out = 25)
+
+# main effect of income
+newdata <- data.frame(AnomDGr = 0, #inc.seq, 
+                      AnomVGr = 0, #mean(final$AnomVGr, na.rm = T),
+                      mig_cell = as.factor(rep(F,25)))
+newdata <- rbind(newdata,
+                 data.frame(AnomDGr = 0,#inc.seq, 
+                            AnomVGr = 0, #mean(final$AnomVGr, na.rm = T),
+                            mig_cell = as.factor(rep(T,25))))
+
+newdata <- newdata %>% distinct()
+newdata$species <- 1
+newdata$year <- 1
+newdata$cell_lat <- 1
+newdata$cell <- 1
+
+(yhat.inc <- predict(mod_gu, newdata = newdata, se.fit = TRUE, iterms.type=2))#, re.form=NA)
+
 
 
 # speed and bird traits --------------------
@@ -290,6 +318,29 @@ rootogram(mod_tra) %>%
              color = "darkgray", size=0.5) +
   geom_hline(yintercept = 1, linetype="dotted", 
              color = "darkgray", size=0.5) 
+# plot predict
+
+# main effect of income
+newdata <- data.frame(xi_mean = rep(mean(final$xi_mean, na.rm = T),4),
+                      ea_lat = rep(mean(final$ea_lat, na.rm = T),4),
+                      Body_mass_g = rep(mean(final$Body_mass_g, na.rm = T),4),
+                      winlat = rep(mean(final$winlat, na.rm = T),4),
+                      Diet = unique(final$Diet), 
+                      Time = rep(c("nocturnal"),4))
+
+newdata <- newdata %>% distinct()
+newdata$species <- 1
+newdata$year <- 1
+newdata$cell_lat <- 1
+newdata$cell <- 1
+par(mfrow=c(1,2))
+plot(exp(yhat.inc$fit + yhat.inc$se.fit), ylim = c(25, 125))
+points(exp(yhat.inc$fit + 2*yhat.inc$se.fit), col = "red")
+points(exp(yhat.inc$fit - 2*yhat.inc$se.fit), col = "red")
+
+(yhat.inc <- predict(mod_tra, newdata = newdata, se.fit = TRUE, iterms.type=2))#, re.form=NA)
+
+
 
 # ea_lat
 svg(glue("figures/mod_tra_ea_lat.svg"), 
@@ -530,7 +581,7 @@ mod_lag <- mgcv::gam(data = final3,
                      AnomLag ~ past_spe_z + ea_lat_yr_z + gr_mn_z + 
                        #s(cell_lat, bs = "tp") + 
                        s(cell, bs = "re") +
-                       s(species, bs = "re"), method = "REML")
+                       s(species, bs = "re"), method = "REML") ## false reml
 
 summary(mod_lag)
 
