@@ -18,9 +18,9 @@ velocityG <- readRDS("~/Library/Mobile Documents/com~apple~CloudDocs/BirdMigrati
 
 # FORMAT DATA ---------------------------- 
 ### green up years: intercept and slopes of arrival dates and speed per years (fast-slow/ early-late)---------------------------
-gudat_lm <- lm(data = final %>% select(gr_mn, cell, cell_lat, year) %>% distinct(),
+gudat_lm <- lm(data = final %>% dplyr::select(gr_mn, cell, cell_lat, year) %>% distinct(),
                gr_mn ~ cell_lat * as.factor(year) - 1)
-summary(lm(data = final %>% select(gr_mn, cell, cell_lat, year) %>% distinct(),
+summary(lm(data = final %>% dplyr::select(gr_mn, cell, cell_lat, year) %>% distinct(),
            gr_mn ~ cell_lat * as.factor(year)))
 yeardlm <- cbind(seq(2002, 2017, 1),as.numeric(gudat_lm$coefficients[2:17]), 
                  c(gudat_lm$coefficients[1], (gudat_lm$coefficients[1] - as.numeric(gudat_lm$coefficients[18:32]))))
@@ -28,7 +28,7 @@ colnames(yeardlm) <- c("year", "gu_dat_int", "gu_dat_slo")
 yeardlm <- as.data.frame(yeardlm)
 rownames(yeardlm) <- NULL
 
-gudat_lm_mean <- lmer(data = final %>% select(gr_mn, cell, cell_lat, year) %>% distinct(),
+gudat_lm_mean <- lmer(data = final %>% dplyr::select(gr_mn, cell, cell_lat, year) %>% distinct(),
                       gr_mn ~ cell_lat + (1|year))
 summary(gudat_lm_mean)
 gudat_lm_mean_int <- as.numeric(getME(gudat_lm_mean, name = "fixef")[1])
@@ -40,9 +40,9 @@ yeardlm <- yeardlm %>%
          ano_gu_dat_int = gu_dat_int - gudat_lm_mean_int,
          ano_gu_dat_slo = gu_dat_slo - gudat_lm_mean_slo)
 
-guspe_lm <- lm(data = final %>% select(vGrMag, cell, cell_lat, year) %>% distinct(),
+guspe_lm <- lm(data = final %>% dplyr::select(vGrMag, cell, cell_lat, year) %>% distinct(),
                log(vGrMag) ~ cell_lat * as.factor(year) - 1)
-summary(lm(data = final %>% select(vGrMag, cell, cell_lat, year) %>% distinct(),
+summary(lm(data = final %>% dplyr::select(vGrMag, cell, cell_lat, year) %>% distinct(),
            log(vGrMag) ~ cell_lat * as.factor(year)))
 yearslm <- cbind(seq(2002, 2017, 1),as.numeric(guspe_lm$coefficients[2:17]), 
                  c(guspe_lm$coefficients[1], (guspe_lm$coefficients[1] - as.numeric(guspe_lm$coefficients[18:32]))))
@@ -50,7 +50,7 @@ colnames(yearslm) <- c("year", "gu_spe_int", "gu_spe_slo")
 yearslm <- as.data.frame(yearslm)
 rownames(yearslm) <- NULL
 
-guspe_lm_mean <- lmer(data = final %>% select(vGrMag, cell, cell_lat, year) %>% distinct(),
+guspe_lm_mean <- lmer(data = final %>% dplyr::select(vGrMag, cell, cell_lat, year) %>% distinct(),
                       log(vGrMag) ~ cell_lat + (1|year))
 sjPlot::tab_model(guspe_lm_mean, show.re.var= TRUE, digits = 3)
 
@@ -198,10 +198,10 @@ dim(final) ; dim(final)[1] == 15875
 ###                  years - years that birds are going fast and slow ???
 
 ### lm for speed  - species that are fast and slow
-bspe_lm <- lmer(data = final %>% select(AnomVArr, cell, cell_lat, species, year) %>% 
+bspe_lm <- lmer(data = final %>% dplyr::select(AnomVArr, cell, cell_lat, species, year) %>% 
                   filter (!species == "Setophaga_pinus") %>% filter (!species == "Pipilo_erythrophthalmus") %>%	distinct(),
                 AnomVArr ~ cell_lat * as.factor(species) - 1 + (1|year))
-bspe_lm_mean <- lmer(data = final %>% select(AnomVArr, cell, cell_lat, species, year) %>% 
+bspe_lm_mean <- lmer(data = final %>% dplyr::select(AnomVArr, cell, cell_lat, species, year) %>% 
                        filter (!species == "Setophaga_pinus") %>% filter (!species == "Pipilo_erythrophthalmus") %>%	distinct(),
                      AnomVArr ~ cell_lat + (1|species))
 bspe_lm_mean_int <- as.numeric(getME(bspe_lm_mean, name = "fixef")[1])
@@ -224,7 +224,7 @@ final <- final %>%
 dim(final) ; dim(final)[1] == 15875
 
 ## years that are fast and slow
-byr_lm <- lmer(data = final %>% select(AnomVArr, cell, cell_lat, year, species) %>% distinct(),
+byr_lm <- lmer(data = final %>% dplyr::select(AnomVArr, cell, cell_lat, year, species) %>% distinct(),
                AnomVArr ~ cell_lat * as.factor(year) - 1 + (1|species))    #no estimate for 2002?
 yearslm <- cbind(seq(2003, 2017, 1), as.numeric(getME(byr_lm, name = "fixef")[2:16]), 
                  c(as.numeric(getME(byr_lm, name = "fixef")[1]), 
@@ -233,7 +233,7 @@ colnames(yearslm) <- c("year", "b_yr_int", "b_yr_slo")
 yearslm <- as.data.frame(yearslm)
 rownames(yearslm) <- NULL
 
-byr_lm_mean <- lmer(data = final %>% select(AnomVArr, cell, cell_lat, year) %>% distinct(),
+byr_lm_mean <- lmer(data = final %>% dplyr::select(AnomVArr, cell, cell_lat, year) %>% distinct(),
                     AnomVArr ~ cell_lat + (1|year))
 byr_lm_mean_int <- as.numeric(getME(byr_lm_mean, name = "fixef")[1])
 byr_lm_mean_slo <- as.numeric(getME(byr_lm_mean, name = "fixef")[2])
@@ -250,10 +250,10 @@ final <- final %>%
 dim(final) ; dim(final)[1] == 15875
 
 ### lm for arrival dates  - species that are early or late
-bdat_lm <- lmer(data = final %>% select(arr_GAM_mean, cell, cell_lat, species, year) %>% 
+bdat_lm <- lmer(data = final %>% dplyr::select(arr_GAM_mean, cell, cell_lat, species, year) %>% 
                   filter (!species == "Setophaga_pinus") %>% filter (!species == "Pipilo_erythrophthalmus") %>%	distinct(),
                 arr_GAM_mean ~ cell_lat * as.factor(species) - 1 + (1|year))
-bdat_lm_mean <- lmer(data = final %>% select(arr_GAM_mean, cell, cell_lat, species, year) %>% 
+bdat_lm_mean <- lmer(data = final %>% dplyr::select(arr_GAM_mean, cell, cell_lat, species, year) %>% 
                        filter (!species == "Setophaga_pinus") %>% filter (!species == "Pipilo_erythrophthalmus") %>%	distinct(),
                      arr_GAM_mean ~ cell_lat + (1|species))
 bdat_lm_mean_int <- as.numeric(getME(bdat_lm_mean, name = "fixef")[1])
@@ -673,7 +673,7 @@ step.model_a3 <- stepAIC(mod_a3, direction = "both",
 summary(step.model_a3)
 
 ## with random body mass is the only significant
-## how to do stepwise selection with random effects?
+## how to do stepwise dplyr::selection with random effects?
 
 
 ### birds traits - what makes a species fast or slow? PLOTS ---------------------------

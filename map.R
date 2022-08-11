@@ -133,3 +133,27 @@ rrb <- pp +
             aes(x = long,y = lat, group = cell),
             inherit.aes = FALSE,
             color = 'black', alpha = 0.2) 
+
+cell_grid_tab5 <- cell_grid_tab4 %>% 
+  mutate(gr_mn = "a")
+pp +
+  geom_polygon(data = cell_grid_tab5, aes(x = long, y = lat),
+               #fill="white",
+               inherit.aes = FALSE, alpha = 1) +
+  geom_polygon(fill = alpha('black', 0.1), color = NA) +
+  geom_path(data = cell_grid_tab4,
+            aes(x = long,y = lat, group = cell),
+            inherit.aes = FALSE,
+            color = 'black', alpha = 0.2) 
+
+pp +
+  geom_polygon(data = cell_grid_tab5, aes(x = long, 
+                                  y = lat, group = group), 
+                                  fill = "white") +
+  #scale_fill_viridis(option="viridis",limits = c(MIN, MAX)) + 
+  geom_path(data = cell_grid_tab5, aes(x = long, 
+                               y = lat, group = group
+  ), 
+  #alpha = 0.4,
+  color = 'black') +
+  theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))

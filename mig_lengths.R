@@ -1,12 +1,12 @@
 # long versus short distance migrants (calendar vs weather birds) - questions --------------------------------
 # long distance will have no idea of what going on far (use internal clocks), but also,
-#  short distance that are in the equator don't have a lot of variation on day lenght or
-#    environ conditions to follow
-#  internal rhytmns initiate, photoperiod and environment adjusts speed (fine-tune).
+#  short distance that are in the equator don't have a lot of variation on day length or
+#    environmental conditions to follow
+#  internal rhythms initiate, photo-period and environment adjusts speed (fine-tune).
 #  when long distance leave, is not only to get good quality in the breeding grounds,
 #    but also leaving before conditions get harsh
 #  a tricky timing challenge to find the right balance between flexibly adjusting migration to the current
-#    environment on the one hand, and keeping track of seasonally appropriate behaviour on the other
+#    environment on the one hand, and keeping track of seasonally appropriate behavior on the other
 #  bad conditions on a site make birds move, not 'predicting' good ones in the future
 
 ## Paper:
