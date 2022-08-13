@@ -1,4 +1,7 @@
-## script to analyze how bird arrival date speed is affected by green-up and bird traits
+# script to analyze how bird arrival date speed is affected by green-up, bird traits and latitude
+#   and which factors contribute to anomalies in lag
+# models and plotting outputs
+
 pkgs <- c("here", "readr", "janitor", "mgcv", "gratia", "dplyr", "ggplot2",
           "ggrepel")
 vapply(pkgs, library, logical(1L),
