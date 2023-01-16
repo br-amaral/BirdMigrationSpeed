@@ -1,8 +1,12 @@
-## Script to import phenological mismatch data (results from Youngflesh et al 2021) and create tibbles 
-##   with bird and green-up velocity to run models in 2_RunMods
-## Input:  arrival_master_2020-07-21.csv
+# 1_GetEstimates.R ---------------------------
+#
+# Code to import phenological mismatch data (results from Youngflesh et al 2021) and create tibbles 
+#   with bird and green-up velocity t
+#
+# Input:   arrival_master_2020-07-21.csv
 #          MidGreenup_2020-08-06-forest.csv
-## Output: velocityB.rds 
+#
+# Output:  velocityB.rds 
 #          cellaveB.rds
 #          velocityG.rds
 #          cellaveG.rds
@@ -337,7 +341,7 @@ final4 <- final3 %>%
   mutate(cell_lat = scale(cell_lat, scale = FALSE))  #scale lat for regression analysis
 
 # save output tibbles to run models
-## velocities of rbird and green up
+## velocities of bird and green up
 saveRDS(velocityB, file = "data/velocityB.rds")
 saveRDS(velocityG, file = "data/velocityG.rds")
 ## files with the coordinates for the velocity vectors for the map (all years together)
@@ -345,8 +349,11 @@ saveRDS(predsB, file = "data/cellaveB.rds")
 saveRDS(predsG, file = "data/cellaveG.rds")
 ## bird and green up velocity merged
 saveRDS(final4, file = "data/birdgreen.rds")
+## cell coordinates
 saveRDS(cells %>% dplyr::select(cell, cell_lat, cell_lng), file = "data/cellcoor.rds")
+## cell numbers
 saveRDS(cellnumbs, file = "data/cellnumbs.rds")
+## cell ans its neighbours
 saveRDS(cells, file = "data/cellnei.rds")
 
 
