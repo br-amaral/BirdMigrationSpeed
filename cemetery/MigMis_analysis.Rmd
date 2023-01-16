@@ -1,0 +1,1402 @@
+---
+title: "Migratory Mismatch"
+output:
+  bookdown::pdf_document2:
+    latex_engine: lualatex
+  tufte::tufte_handout:
+    latex_engine: xelatex
+---
+long versus short distance migrants (calendar vs weather birds):
+- long distance will have no idea of what going on far (use internal clocks), but also,
+    short distance that are in the equator don't have a lot of variation on day length or
+    environmental conditions to follow
+-  internal rhythms initiate, photo-period and environment adjusts speed (fine-tune).
+-  when long distance leave, is not only to get good quality in the breeding grounds,
+    but also leaving before conditions get harsh
+-  a tricky timing challenge to find the right balance between flexibly adjusting migration to the current
+    environment on the one hand, and keeping track of seasonally appropriate behavior on the other
+-  bad conditions on a site make birds move, not 'predicting' good ones in the future
+
+Paper:
+- long: less synchrony, arrive later, move quicker, inflexible
+- short: more synchrony, arrive earlier, move slower, flexible
+
+```{r import and format data, echo = F, results='hide',fig.keep='all',warning=FALSE,message=FALSE,error=FALSE}
+library(egg)
+library(ggplot2)
+library(tidyverse)
+library(viridis)
+library("glue")
+library(lemon)
+library(lme4)
+library(mgcv)
+library(MASS)
+
+final <- readRDS("~/Library/Mobile Documents/com~apple~CloudDocs/BirdMigrationSpeed/data/birdgreen.rds")
+cells <- readRDS("~/Library/Mobile Documents/com~apple~CloudDocs/BirdMigrationSpeed/data/cellcoor.rds")
+velocityG <- readRDS("~/Library/Mobile Documents/com~apple~CloudDocs/BirdMigrationSpeed/data/velocityG.rds") %>% 
+  left_join(., cells, by = "cell")
+
+## medians of arrival dates and fast and slow dates instead of categories
+finalG <- final %>% 
+  dplyr::select(year, cell, cell_lat, gr_mn, vGrMag, AnomDGr, AnomVGr) %>% 
+  group_by(year) %>% 
+  summarise(medarr = median(gr_mn, na.rm = T),
+            med_spe = median(vGrMag, na.rm = T))
+
+final <- final %>% 
+  left_join(., finalG, by = "year")
+
+## add Casey's overwinter latitude
+winlat <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/BirdMigrationSpeed/data/Table_S1.csv") %>%
+  dplyr::select(Species, Overwinterlatitude) %>% 
+  mutate(species2 = Species) %>% 
+  rename(species = Species, 
+         winlat = Overwinterlatitude) %>% 
+  mutate(species = sub(" ", "_", species))
+
+final <- left_join(final, winlat, by = "species")
+
+## add Casey's species sensitivity
+sensi <- readRDS("~/Library/Mobile Documents/com~apple~CloudDocs/BirdMigrationSpeed/data/data_sensi.RDS") %>% 
+  dplyr::select(sci_name,
+         cell,
+         beta_mean) %>% 
+  rename(species = sci_name,
+         sensi = beta_mean)
+
+cellnumbs <- readRDS("~/Library/Mobile Documents/com~apple~CloudDocs/BirdMigrationSpeed/data/cellnumbs.rds")
+sensi <- left_join(sensi, cellnumbs, by = "cell") %>% 
+  dplyr::select(-cell) %>% 
+  rename(cell = cell2)
+
+final <- left_join(final, sensi, by = c("species","cell")) 
+
+final <- final %>% 
+  mutate(winlatcat = ifelse(winlat < (-5), 'Long', 
+                            ifelse(winlat > (-5) & winlat < 13, "Medium", 
+                                   ifelse(winlat > 13, "Short", "opps"))))
+
+final$winlatcat <- factor(final$winlatcat, ordered = TRUE,
+                      levels = c("Short","Medium","Long"))
+
+avgsumlat <- final %>%
+  dplyr::select(species, breed_cell, cell_lat) %>% 
+  filter(breed_cell == T) %>% 
+  group_by(species) %>% 
+  summarise(mean(cell_lat))
+
+final <- final %>% 
+  left_join(., avgsumlat, by = "species") %>% 
+  rename(medbree = `mean(cell_lat)`)
+
+final <- final %>% 
+  mutate(brelatcat = ifelse(cell_lat < (-5) & breed_cell == T, 'Low', 
+                            ifelse(cell_lat > (-5) & cell_lat < 2.5  & breed_cell == T, "Medium", 
+                                   ifelse(cell_lat > 2.5 & breed_cell == T, "High", "opps"))))
+
+final$brelatcat <- factor(final$brelatcat, ordered = TRUE,
+                      levels = c("Low","Medium","High"))
+
+final <- final %>% 
+  group_by(species) %>% 
+  mutate(mean_spe = mean(log(vArrMag), na.rm = T)) %>% 
+  ungroup() %>% 
+  mutate(specat = ifelse(mean_spe < (5.5), 'Slow', 
+                            ifelse(mean_spe > (5.5) & mean_spe < 6, "Medium", 
+                                   ifelse(mean_spe > 6, "Fast", "opps"))))
+
+final <- final %>% 
+  group_by(species) %>% 
+  mutate(varanolag = var(AnomLag, na.rm = T),
+         varanospe = var(AnomVArr, na.rm = T)) %>% 
+  ungroup()
+
+```
+
+# BIRD TRAITS ------------------------------- 
+## Winter latitude
+### - bird speed and winter range
+Which species are fast and slow? how does how far south they come from influences speed?
+
+```{r plot species and group speed, echo=FALSE, results='hide',fig.keep='all',warning=FALSE,message=FALSE,error=FALSE}
+p2 <- ggplot(data = final) +
+  #geom_jitter(aes(x = reorder(species, log(vArrMag), FUN = median, na.rm = TRUE), 
+  #                y = log(vArrMag), 
+  #                color = migdist, alpha = 0.9), height = 0.25, stroke=0) +
+  geom_boxplot(aes(x = reorder(species2, log(vArrMag), FUN = mean, na.rm = TRUE), 
+                   y = log(vArrMag), fill = winlat),
+               width=0.5, alpha = 0.7) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_text(size = 10),
+        #legend.position = "none",
+        #legend.justification = "right",
+        #legend.margin=margin(0,0,0,0),
+        #legend.box.margin=margin(-5,0,-5,-7),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y=element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.text.x = element_text(angle = 90, vjust = 0.5,
+                                   hjust=1, face = "italic")) +
+  labs(title="Species") +
+   scale_fill_viridis(name = "Wintering\nLatitude\n(degrees)\n") 
+
+means <- final %>% 
+  group_by(winlatcat) %>% 
+  summarise(meanspe = mean(log(vArrMag), na.rm = T))
+
+p1 <- ggplot(data = final) +
+  geom_boxplot(aes(x = winlatcat, 
+                   y = log(vArrMag), fill = winlatcat),
+               width=0.4, alpha = 0.7) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_blank(),
+        legend.position = "none",
+        #legend.justification = "right",
+        #legend.margin=margin(0,0,0,0),
+        #legend.box.margin=margin(-5,0,-5,-7),
+        axis.title.x = element_blank(),
+        #axis.title.y = element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  #scale_x_continuous(breaks = seq(-3, 1, 0.5),
+  #                   limits = c(-3, 1, 0.5)) +
+  labs(title="Migration distance", y="Log(Bird speed)") +
+  geom_point(data = means, aes(x = winlatcat, y = meanspe))
+
+egg::ggarrange(p1, p2, ncol = 2, 
+               top = "Migration speed", widths = c(2, 12))
+
+```
+
+```{r regression for differences between groups, echo=FALSE, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+# does migration distance affects speed?
+moda_1 <- lmer(data = final, log(vArrMag) ~ winlat + (1|species) + (1|year)) 
+
+moda_2 <- lmer(data = final, log(vArrMag) ~ winlatcat + (1|species) + (1|year)) 
+
+moda_3 <- lmer(data = final, log(vArrMag) ~ winlat + (1|cell_lat) + (1|species) + (1|year)) 
+
+moda_4 <- lmer(data = final, log(vArrMag) ~ winlatcat + (1|cell_lat) + (1|species) + (1|year))
+head(taica <- AIC(moda_1,moda_2, moda_3, moda_4
+                  ) %>% arrange(AIC)) 
+
+#summary(moda_1)
+sjPlot::tab_model(
+  get(rownames(taica)[1]),
+  #moda_1,
+  show.re.var= TRUE, digits = 3)
+```
+
+### - speed anomaly and winter range
+How is anomaly in bird speed affected by how further north they come from?
+```{r do species that come from further south vary less in their speed? ,echo=FALSE, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+
+p2b <- ggplot(data = final) +
+  #geom_jitter(aes(x = reorder(species, log(vArrMag), FUN = median, na.rm = TRUE), 
+  #                y = log(vArrMag), 
+  #                color = migdist, alpha = 0.9), height = 0.25, stroke=0) +
+  geom_boxplot(aes(x = reorder(species2, AnomVArr, FUN = var, na.rm = TRUE), 
+                   y = AnomVArr, fill = winlat),
+               width=0.5, alpha = 0.7) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_text(size = 10),
+        #legend.position = "none",
+        #legend.justification = "right",
+        #legend.margin=margin(0,0,0,0),
+        #legend.box.margin=margin(-5,0,-5,-7),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y=element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.text.x = element_text(angle = 90, vjust = 0.5,
+                                   hjust=1, face = "italic")) +
+  labs(title="Species") +
+   scale_fill_viridis(name = "Wintering\nLatitude\n(degrees)\n") 
+
+
+means <- final %>% 
+  group_by(winlatcat) %>% 
+  summarise(meanspe = mean(AnomVArr, na.rm = T))
+
+p1b <- ggplot(data = final) +
+  geom_boxplot(aes(x = winlatcat, 
+                   y = AnomVArr, fill = winlatcat),
+               width=0.4, alpha = 0.7) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_blank(),
+        legend.position = "none",
+        #legend.justification = "right",
+        #legend.margin=margin(0,0,0,0),
+        #legend.box.margin=margin(-5,0,-5,-7),
+        axis.title.x = element_blank(),
+        #axis.title.y = element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  #scale_x_continuous(breaks = seq(-3, 1, 0.5),
+  #                   limits = c(-3, 1, 0.5)) +
+  labs(title="Migration distance", y="Anomaly Bird speed)") +
+  geom_point(data = means, aes(x = winlatcat, y = meanspe)) +
+   scale_fill_viridis(discrete = TRUE, name = "Wintering\nLatitude\n(degrees)\n") 
+
+egg::ggarrange(p1b, p2b, ncol = 2, 
+               top = "Migration speed", widths = c(2, 12))
+
+```
+
+```{r model}
+modb_1 <- lmer(data = final, AnomVArr ~ winlat + (1|species) + (1|year)) 
+
+modb_2 <- lmer(data = final, AnomVArr ~ winlatcat + (1|species) + (1|year)) 
+
+modb_3 <- lmer(data = final, AnomVArr ~ winlat + (1|cell_lat) + (1|species) + (1|year)) 
+
+modb_4 <- lmer(data = final, AnomVArr ~ winlatcat + (1|cell_lat) + (1|species) + (1|year))
+
+head(taicb <- AIC(modb_1,modb_2, modb_3, modb_4
+                  ) %>% arrange(AIC)) 
+
+#summary(moda_1)
+sjPlot::tab_model(
+  get(rownames(taicb)[1]),
+  #moda_1,
+  show.re.var= TRUE, digits = 3)
+```
+
+### - lag and winter range
+how are species that come from further south tracking green up - looking at lag!
+```{r ,echo=FALSE, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+p2c <- ggplot(data = final) +
+  #geom_jitter(aes(x = reorder(species, log(vArrMag), FUN = median, na.rm = TRUE), 
+  #                y = log(vArrMag), 
+  #                color = migdist, alpha = 0.9), height = 0.25, stroke=0) +
+  geom_boxplot(aes(x = reorder(species2, AnomLag, FUN = var, na.rm = TRUE), 
+                   y = AnomLag, fill = winlat),
+               width=0.5, alpha = 0.7) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_text(size = 10),
+        #legend.position = "none",
+        #legend.justification = "right",
+        #legend.margin=margin(0,0,0,0),
+        #legend.box.margin=margin(-5,0,-5,-7),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y=element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.text.x = element_text(angle = 90, vjust = 0.5,
+                                   hjust=1, face = "italic")) +
+  labs(title="Species") +
+   scale_fill_viridis(name = "Wintering\nLatitude\n(degrees)\n") 
+
+means <- final %>% 
+  group_by(winlatcat) %>% 
+  summarise(meanspe = mean(AnomLag, na.rm = T))
+
+p1c <- ggplot(data = final) +
+  geom_boxplot(aes(x = winlatcat, 
+                   y = AnomLag, fill = winlatcat),
+               width=0.4, alpha = 0.7) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_blank(),
+        legend.position = "none",
+        #legend.justification = "right",
+        #legend.margin=margin(0,0,0,0),
+        #legend.box.margin=margin(-5,0,-5,-7),
+        axis.title.x = element_blank(),
+        #axis.title.y = element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  #scale_x_continuous(breaks = seq(-3, 1, 0.5),
+  #                   limits = c(-3, 1, 0.5)) +
+  labs(title="Migration distance", y="Anomaly Bird lag)") +
+  geom_point(data = means, aes(x = winlatcat, y = meanspe)) +
+   scale_fill_viridis(discrete = TRUE, name = "Wintering\nLatitude\n(degrees)\n") 
+
+egg::ggarrange(p1c, p2c, ncol = 2, 
+               top = "Migration speed", widths = c(2, 12))
+
+```
+
+```{r model}
+modc_1 <- lmer(data = final, AnomLag ~ winlat + (1|species) + (1|year)) 
+
+modc_2 <- lmer(data = final, AnomLag ~ winlatcat + (1|species) + (1|year)) 
+
+modc_3 <- lmer(data = final, AnomLag ~ winlat + (1|cell_lat) + (1|species) + (1|year)) 
+
+modc_4 <- lmer(data = final, AnomLag ~ winlatcat + (1|cell_lat) + (1|species) + (1|year))
+
+modc_5 <- lmer(data = final, AnomLag ~ winlat + poly(winlat,2) + (1|species) + (1|year)) 
+
+head(taicc <- AIC(modc_1,modc_2, modc_3, modc_4, modc_5
+                  ) %>% arrange(AIC)) 
+
+#summary(moda_1)
+sjPlot::tab_model(
+  get(rownames(taicc)[1]),
+  #moda_1,
+  show.re.var= TRUE, digits = 3)
+
+modc_1g <- gam(data = final %>% mutate(species = as.factor(species)), 
+               AnomLag ~ winlat + s(species, bs = 're') + s(year, bs = 're')) 
+
+modc_2g <- gam(data = final %>% mutate(species = as.factor(species)),
+               AnomLag ~ winlatcat + s(species, bs = 're') + s(year, bs = 're')) 
+
+modc_3g <- gam(data = final %>% mutate(species = as.factor(species)),
+               AnomLag ~ winlat + s(cell_lat, bs = 're') + s(species, bs = 're') + s(year, bs = 're')) 
+
+modc_4g <- gam(data = final %>% mutate(species = as.factor(species)),
+               AnomLag ~ winlatcat + s(cell_lat, bs = 're') + s(species, bs = 're') + s(year, bs = 're'))
+
+head(taiccg <- AIC(modc_1g,modc_2g, modc_3g, modc_4g
+                  ) %>% arrange(AIC)) 
+
+summary(get(rownames(taiccg)[1]))
+
+ggplot(final) +
+   geom_point(aes(y = AnomLag, x = winlat)) +
+   geom_smooth(aes(y = AnomLag, x = winlat), col = "green") +
+   geom_smooth(aes(y = AnomLag, x = winlat), method = "lm", col = "red") +
+   geom_smooth(aes(y = AnomLag, x = winlat), col = "blue", formula = y ~ x + I(x^2)) +
+   theme_bw()
+
+```
+
+ok, maybe it is hard to assess conditions from that far... but what if we use how further north the species need to go? MEAN BREEDING LAT
+## Breeding latitude
+### - !!! breeding lat and speed
+```{r speed and breeding lat ,echo=FALSE, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+
+# control for latitude, because they are on average faster on north!
+p2a <- ggplot(data = final #%>% filter(breed_cell == T)
+              ) +
+  geom_boxplot(aes(x = reorder(species2, log(vArrMag), FUN = mean, na.rm = TRUE), 
+                   y = log(vArrMag), fill = medbree),
+               width=0.5, alpha = 0.7) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_text(size = 10),
+        #legend.position = "none",
+        #legend.justification = "right",
+        #legend.margin=margin(0,0,0,0),
+        #legend.box.margin=margin(-5,0,-5,-7),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y=element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.text.x = element_text(angle = 90, vjust = 0.5,
+                                   hjust=1, face = "italic")) +
+  labs(title="Species") +
+   scale_fill_viridis(name = "Median breed\n range") 
+
+ggplot(final %>% filter(breed_cell == T), aes(x = cell_lat)) + geom_histogram()
+
+means2 <- final %>% 
+  filter(breed_cell == T) %>% 
+  group_by(brelatcat) %>% 
+  summarise(meanspe = mean(log(vArrMag), na.rm = T))
+
+p1a <- ggplot(data = final) +
+  geom_boxplot(aes(x = brelatcat, 
+                   y = log(vArrMag), fill = brelatcat),
+               width=0.4, alpha = 0.7) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_blank(),
+        legend.position = "none",
+        #legend.justification = "right",
+        #legend.margin=margin(0,0,0,0),
+        #legend.box.margin=margin(-5,0,-5,-7),
+        axis.title.x = element_blank(),
+        #axis.title.y = element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  #scale_x_continuous(breaks = seq(-3, 1, 0.5),
+  #                   limits = c(-3, 1, 0.5)) +
+  labs(title="Median breed range", y="Log(Bird speed)") +
+  geom_point(data = means2, aes(x = brelatcat, y = meanspe))
+
+
+egg::ggarrange(p1a, p2a, ncol = 2, 
+               top = "Migration speed", widths = c(2, 12))
+
+
+
+```
+further north you have to go, the faster you are
+
+```{r models for speed and mean breed latitude}
+mod_f1 <- lmer(data = final, log(vArrMag) ~ (1|cell_lat) + medbree + (1|species) + (1|year))
+mod_f2 <- lmer(data = final, log(vArrMag) ~ cell_lat + medbree + (1|species) + (1|year))
+
+head(taicf1 <- AIC(mod_f1, mod_f2
+                  ) %>% arrange(AIC)) 
+
+sjPlot::tab_model(
+  get(rownames(taicf1)[1]),
+  #moda_1,
+  show.re.var= TRUE, digits = 3)
+
+```
+
+### - breeding lat and anomaly in speed
+```{r speed anomaly speed and breeding lat, echo=FALSE,results='hide',fig.keep='all',warning=FALSE,message=FALSE,error=FALSE}
+
+p1b <- ggplot(data = final #%>% filter(breed_cell == T)
+              ) +
+  geom_boxplot(aes(x = reorder(species2, AnomVArr, FUN = var, na.rm = TRUE), 
+                   y = AnomVArr, fill = medbree),
+               width=0.5, alpha = 0.7) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_text(size = 10),
+        #legend.position = "none",
+        #legend.justification = "right",
+        #legend.margin=margin(0,0,0,0),
+        #legend.box.margin=margin(-5,0,-5,-7),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y=element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.text.x = element_text(angle = 90, vjust = 0.5,
+                                   hjust=1, face = "italic")) +
+  labs(title="Species") +
+   scale_fill_viridis(name = "Median breed\n range") 
+
+means3 <- final %>% 
+  filter(breed_cell == T) %>% 
+  group_by(brelatcat) %>% 
+  summarise(meanspe = mean(AnomVArr, na.rm = T))
+
+p2b <- ggplot(data = final) +
+  geom_boxplot(aes(x = brelatcat, 
+                   y = AnomVArr, fill = brelatcat),
+               width=0.4, alpha = 0.7) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_blank(),
+        legend.position = "none",
+        #legend.justification = "right",
+        #legend.margin=margin(0,0,0,0),
+        #legend.box.margin=margin(-5,0,-5,-7),
+        axis.title.x = element_blank(),
+        #axis.title.y = element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  #scale_x_continuous(breaks = seq(-3, 1, 0.5),
+  #                   limits = c(-3, 1, 0.5)) +
+  labs(title="Median breed range", y="Bird speed anomaly") +
+  geom_point(data = means3, aes(x = brelatcat, y = meanspe))
+
+egg::ggarrange(p2b, p1b, ncol = 2, 
+               top = "Migration speed", widths = c(2, 12))
+
+```
+
+```{r models for anomaly speed and mean breed latitude}
+# only BREEDING CELLS
+mod_f3 <- lmer(data = final, AnomVArr ~ (1|cell_lat) + medbree + (1|species) + (1|year))
+mod_f4 <- lmer(data = final, AnomVArr ~ cell_lat + medbree + (1|species) + (1|year))
+
+head(taicf2 <- AIC(mod_f3, mod_f4
+                  ) %>% arrange(AIC)) 
+
+sjPlot::tab_model(
+  get(rownames(taicf2)[1]),
+  #moda_1,
+  show.re.var= TRUE, digits = 3)
+
+```
+
+### - breeding lat and lag
+```{r breeding latitude and speed anomaly speed, echo=FALSE,results='hide',fig.keep='all',warning=FALSE,message=FALSE,error=FALSE}
+
+p1c <- ggplot(data = final #%>% filter(breed_cell == T)
+              ) +
+  geom_boxplot(aes(x = reorder(species2, AnomLag, FUN = var, na.rm = TRUE), 
+                   y = AnomLag, fill = medbree),
+               width=0.5, alpha = 0.7) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_text(size = 10),
+        #legend.position = "none",
+        #legend.justification = "right",
+        #legend.margin=margin(0,0,0,0),
+        #legend.box.margin=margin(-5,0,-5,-7),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y=element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.text.x = element_text(angle = 90, vjust = 0.5,
+                                   hjust=1, face = "italic")) +
+  labs(title="Species") +
+   scale_fill_viridis(name = "Median breed\n range") 
+
+means4 <- final %>% 
+  filter(breed_cell == T) %>% 
+  group_by(brelatcat) %>% 
+  summarise(meanspe = mean(AnomLag, na.rm = T))
+
+p2c <- ggplot(data = final) +
+  geom_boxplot(aes(x = brelatcat, 
+                   y = AnomLag, fill = brelatcat),
+               width=0.4, alpha = 0.7) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_blank(),
+        legend.position = "none",
+        #legend.justification = "right",
+        #legend.margin=margin(0,0,0,0),
+        #legend.box.margin=margin(-5,0,-5,-7),
+        axis.title.x = element_blank(),
+        #axis.title.y = element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  #scale_x_continuous(breaks = seq(-3, 1, 0.5),
+  #                   limits = c(-3, 1, 0.5)) +
+  labs(title="Median breed range", y="Bird speed anomaly") +
+  geom_point(data = means4, aes(x = brelatcat, y = meanspe))
+
+egg::ggarrange(p2c, p1c, ncol = 2, 
+               top = "Migration speed", widths = c(2, 12))
+
+```
+
+```{r models for lag and mean breed latitude}
+# only BREEDING CELLS
+mod_f5 <- lmer(data = final, AnomLag ~ (1|cell_lat) + medbree + (1|species) + (1|year))
+mod_f6 <- lmer(data = final, AnomLag ~ cell_lat + medbree + (1|species) + (1|year))
+
+head(taicf3 <- AIC(mod_f5, mod_f6
+                  ) %>% arrange(AIC)) 
+
+sjPlot::tab_model(
+  get(rownames(taicf3)[1]),
+  #moda_1,
+  show.re.var= TRUE, digits = 3)
+
+```
+
+# SENSITIVITY
+are sensitive birds faster? or more flexible?
+## Sensitivity and speed
+### - winter distance groups
+```{r sensitivity and speed strenght, fig.width = 8, fig.height = 3, echo=FALSE, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+
+p5 <- ggplot(final %>% 
+        mutate(winlatcat = ifelse(winlat < (-5), 'Long', 
+                                  ifelse(winlat > (-5) & winlat < 13, "Medium", 
+                                         ifelse(winlat > 13, "Short", "opps")))) %>% 
+        filter(species != "Setophaga_tigrina")) +
+  geom_point(aes(x = sensi, y = log(vArrMag), col = winlat, stroke=0), 
+             alpha = 0.7, size = 2.3) +
+  geom_smooth(aes(x = sensi, 
+                  y = log(vArrMag))) +
+  theme_bw() +
+  scale_color_viridis(name = "Wintering\nLatitude\n(degrees)\n") +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title=element_text(size=9),
+        #axis.title.x = element_text(hjust = 1.85),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10)) +
+ # facet_rep_wrap(~winlatcat) + 
+  labs(title="Species", x = "Species sensitivity", y = "Log(Bird Speed)")
+  
+p6 <- ggplot(final %>% 
+  mutate(winlatcat = ifelse(winlat < (-5), 'Long', 
+                            ifelse(winlat > (-5) & winlat < 13, "Medium", 
+                                   ifelse(winlat > 13, "Short", "opps")))) %>% 
+  filter(species != "Setophaga_tigrina")) +
+  theme_bw() +
+  geom_smooth(aes(x = sensi, 
+                  y = log(vArrMag), col = winlatcat)) +
+  scale_color_viridis(discrete=TRUE, name = "Migrant\nGroups") + 
+  guides(color=guide_legend(override.aes=list(fill=NA)))  +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title=element_text(size=9),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10)) +
+  labs(title="Group models", x = "Species sensitivity", y = "Log(Bird Speed)")
+
+egg::ggarrange(p5, p6, ncol = 2, 
+               top = "Migration speed and sensitivity to green-up", 
+               widths = c(4, 4))
+
+p5 + facet_rep_wrap(~winlatcat)
+
+```
+
+```{r models for sensitivity and speed, echo = FALSE,results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+# linear
+modd_1 <- lmer(data = final %>% mutate(species = as.factor(species)), 
+              log(vArrMag) ~ sensi + (1|cell_lat) + (1|species) + (1|year)) 
+modd_2 <- lmer(data = final %>% mutate(species = as.factor(species)) %>% 
+        mutate(winlatcat = ifelse(winlat < (-5), 'Long', 
+                                  ifelse(winlat > (-5) & winlat < 13, "Medium", 
+                                         ifelse(winlat > 13, "Short", "opps")))), 
+              log(vArrMag) ~  sensi + winlatcat + (1|cell_lat)  + (1|species) + (1|year)) 
+modd_3 <- lmer(data = final %>% mutate(species = as.factor(species)), 
+              log(vArrMag) ~ sensi + winlat + (1|cell_lat) + (1|species) + (1|year))  
+modd_4 <- lmer(data = final %>% mutate(species = as.factor(species)), 
+              log(vArrMag) ~ sensi + medbree + (1|cell_lat) + (1|species) + (1|year))
+
+head(taicd <- AIC(modd_1,modd_2,modd_3,modd_4
+                  ) %>% arrange(AIC)) 
+
+sjPlot::tab_model(get(rownames(taicd)[1]),
+                  show.re.var= TRUE, 
+                  digits = 3)
+
+# GAMS
+
+mode_1 <- gam(data = final %>% mutate(species = as.factor(species)), 
+              log(vArrMag) ~ sensi + cell_lat + s(species, bs = 're') + 
+                s(year, bs ='re')) 
+mode_2 <- gam(data = final %>% mutate(species = as.factor(species)), 
+              log(vArrMag) ~  sensi + winlatcat + cell_lat + s(species, bs = 're') +
+                s(year, bs = 're') + s(cell_lat, bs = 're')) 
+mode_3 <- gam(data = final %>% mutate(species = as.factor(species)), 
+              log(vArrMag) ~ sensi + winlat + cell_lat + s(species, bs = 're') + 
+                s(year, bs = 're') + s(cell_lat, bs = 're')) 
+
+head(taice <- AIC(mode_1,mode_2,mode_3
+                  ) %>% arrange(AIC)) 
+summary(get(rownames(taice)[1]))
+
+```
+
+### - breeding latitude
+```{r sensitivity and speed anomaly, fig.width = 8, fig.height = 3, echo=FALSE, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+
+p5a <- ggplot(final %>% 
+        mutate(winlatcat = ifelse(winlat < (-5), 'Long', 
+                                  ifelse(winlat > (-5) & winlat < 13, "Medium", 
+                                         ifelse(winlat > 13, "Short", "opps")))) %>% 
+        filter(species != "Setophaga_tigrina")) +
+  geom_point(aes(x = sensi, y = AnomVArr, col = winlat, stroke=0), 
+             alpha = 0.7, size = 2.3) +
+  geom_smooth(aes(x = sensi, 
+                  y = AnomVArr)) +
+  theme_bw() +
+  scale_color_viridis(name = "Wintering\nLatitude\n(degrees)\n") +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title=element_text(size=9),
+        axis.title.x = element_text(hjust = 1.85),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10)) +
+ # facet_rep_wrap(~winlatcat) + 
+  labs(title="Species", x = "Species sensitivity", y = "Log(Bird Speed)")
+  
+p6a <- ggplot(final %>% 
+  mutate(winlatcat = ifelse(winlat < (-5), 'Long', 
+                            ifelse(winlat > (-5) & winlat < 13, "Medium", 
+                                   ifelse(winlat > 13, "Short", "opps")))) %>% 
+  filter(species != "Setophaga_tigrina")) +
+  theme_bw() +
+  geom_smooth(aes(x = sensi, 
+                  y = AnomVArr, col = winlatcat)) +
+  scale_color_viridis(discrete=TRUE, name = "Migrant\nGroups") + 
+  guides(color=guide_legend(override.aes=list(fill=NA)))  +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title=element_text(size=9),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10)) +
+  labs(title="Group models", x = "Species sensitivity", y = "Log(Bird Speed)")
+
+egg::ggarrange(p5a, p6a, ncol = 2, 
+               top = "Migration speed and sensitivity to green-up", 
+               widths = c(4, 4))
+
+```
+
+### - species (groups - breeding and winter)
+```{r speed anomaly and sensitivity , fig.width = 8, fig.height = 3, echo=FALSE, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+pa <- ggplot(data = final #%>% filter(breed_cell == T)
+              ) +
+  geom_boxplot(aes(x = reorder(species2, sensi, FUN = mean, na.rm = TRUE), 
+                   y = log(vArrMag), fill = medbree),
+               width=0.5, alpha = 0.7) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_text(size = 10),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.text.x = element_text(angle = 90, vjust = 0.5,
+                                   hjust=1, face = "italic")) +
+  labs(title="Species") +
+   scale_fill_viridis(name = "Mean breed\n range") 
+
+pb <- ggplot(data = final #%>% filter(breed_cell == T)
+              ) +
+  geom_boxplot(aes(x = reorder(species2, sensi, FUN = mean, na.rm = TRUE), 
+                   y = log(vArrMag), fill = winlat),
+               width=0.5, alpha = 0.7) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_text(size = 10),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.text.x = element_text(angle = 90, vjust = 0.5,
+                                   hjust=1, face = "italic")) +
+  labs(title="Species") +
+   scale_fill_viridis(name = "Mean winter\n range") 
+
+egg::ggarrange(pa, pb, ncol = 1, 
+               top = "Migration speed and sensitivity to green-up", 
+               widths = c(8))
+```
+
+### - speed variability and sensitivity
+```{r species sensitivity and speed variablility, echo = F, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+
+ggplot(final %>% 
+  filter(species != "Setophaga_tigrina")) +
+  theme_bw() +
+  geom_point(aes(x = sensi, 
+                  y = AnomVArr, col = medbree)) +
+  geom_smooth(aes(x = sensi, 
+                  y = AnomVArr)) +
+  scale_color_viridis(name = "Migrant\nGroups") + 
+  guides(color=guide_legend(override.aes=list(fill=NA)))  +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title=element_text(size=9),
+        #axis.title.x = element_blank(),
+        #axis.title.y = element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10)) +
+  labs(title="Group models", x = "Species sensitivity", y = "Speed Anomaly") +
+  facet_wrap(~brelatcat)
+
+```
+
+# LATITUDE
+how speed is changing across latitude? 
+## speed in latitude - general, winter, breed, fast
+```{r winter, echo=FALSE,results='hide',fig.keep='all',warning=FALSE,message=FALSE,error=FALSE}
+p3 <- ggplot(data = (final)) +
+    #geom_point(aes(x = cell_lat, 
+    #                 y = log(vArrMag), col = species),
+    #           alpha = 0.3, stroke=0, show.legend = FALSE) +
+    geom_smooth(aes(x = cell_lat, 
+                    y = log(vArrMag), col = winlatcat), 
+                    #se = FALSE,
+                show.legend = TRUE) +
+    theme_bw() +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.title=element_text(size=10),
+          #legend.position = "none",
+          #legend.justification = "right",
+          #legend.margin=margin(0,0,0,0),
+          #legend.box.margin=margin(-5,0,-5,-7),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          legend.title.align = 0.5,
+          plot.title = element_text(hjust = 0.5, size=10)) +
+    #scale_x_continuous(breaks = seq(-3, 1, 0.5),
+    #                   limits = c(-3, 1, 0.5)) +
+    labs(title="Group mean", x = "Latitude (degrees)", y = "Log(Bird Speed)") +
+    scale_color_viridis(discrete=TRUE, 
+                        name = "Wintering\nLatitude\n(degrees)\n") +
+    ylim(c(4,7)) + 
+    guides(color=guide_legend(override.aes=list(fill=NA)))
+  
+
+p4 <- ggplot(data = (final %>% 
+                filter(species != "Setophaga_tigrina"))) +
+    #geom_point(aes(x = cell_lat, 
+    #                 y = log(vArrMag), col = species),
+    #           alpha = 0.3, stroke=0, show.legend = FALSE) +
+    geom_smooth(aes(x = cell_lat, 
+                    y = log(vArrMag), col = species), 
+                se = FALSE, show.legend = TRUE) +
+    theme_bw() +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          #legend.title = element_blank(),
+          legend.position = "none",
+          #legend.justification = "right",
+          #legend.margin=margin(0,0,0,0),
+          #legend.box.margin=margin(-5,0,-5,-7),
+          axis.title.x = element_text(hjust = 0.7),
+          #axis.title.y = element_blank(),
+          legend.title.align = 0.5,
+          plot.title = element_text(hjust = 0.5, size=10)) +
+    labs(title="Species", x = "Latitude (degrees)", y = "Log(Bird Speed)") +
+    scale_color_viridis(discrete=TRUE, 
+                        name = "Wintering\nLatitude\n(degrees)\n") +
+    facet_rep_wrap(~winlatcat) +
+    ylim(c(4,7))
+
+
+#svg(glue("figures/mig_speed_latitude.svg"), 
+#    width = 11, height = 4)
+
+egg::ggarrange(p4, p3, ncol = 2, 
+               top = "Migration speed across latitude", 
+               widths = c(20, 8))
+
+#dev.off()
+
+```
+
+```{r models}
+mod_l1 <- lmer(data = final, log(vArrMag) ~ cell_lat + winlat + (1|species) + (1|year))
+mod_l2 <- lmer(data = final, log(vArrMag) ~ cell_lat + medbree + (1|species) + (1|year))
+mod_l3 <- lmer(data = final, log(vArrMag) ~ cell_lat + sensi + (1|species) + (1|year))
+mod_l4 <- lmer(data = final, log(vArrMag) ~ cell_lat + arr_GAM_mean + (1|species) + (1|year))
+mod_l5 <- lmer(data = final, log(vArrMag) ~ cell_lat + AnomVArr + (1|species) + (1|year))
+mod_l6 <- lmer(data = final, log(vArrMag) ~ cell_lat + medbree + arr_GAM_mean + AnomVArr + (1|species) + (1|year))
+
+head(taicb <- AIC(mod_l1,mod_l2,mod_l3,mod_l4,mod_l5,mod_l6
+                  ) %>% arrange(AIC)) 
+
+sjPlot::tab_model(mod_l1, show.re.var= TRUE, digits = 3)
+sjPlot::tab_model(mod_l2, show.re.var= TRUE, digits = 3)
+sjPlot::tab_model(mod_l3, show.re.var= TRUE, digits = 3)
+sjPlot::tab_model(mod_l4, show.re.var= TRUE, digits = 3)
+sjPlot::tab_model(mod_l5, show.re.var= TRUE, digits = 3)
+sjPlot::tab_model(mod_l6, show.re.var= TRUE, digits = 3)
+
+# Fit the full model 
+full.model <- lm(data = na.omit(final %>% dplyr::select(vArrMag,cell_lat,winlat,medbree,
+                     sensi,arr_GAM_mean,AnomVArr,AnomLag)), 
+                 log(vArrMag) ~ cell_lat + winlat + medbree + 
+                     sensi + arr_GAM_mean + AnomVArr + AnomLag)
+# Stepwise regression model
+step.model <- stepAIC(full.model, direction = "both", 
+                      trace = FALSE)
+summary(step.model)
+
+
+```
+
+```{r breed ,echo=FALSE,results='hide',fig.keep='all',warning=FALSE,message=FALSE,error=FALSE}
+pa3 <- ggplot(data = (final %>% 
+  mutate(brelatcat = ifelse(cell_lat < (-5) & breed_cell == T, 'Low', 
+                            ifelse(cell_lat > (-5) & cell_lat < 2.5  & breed_cell == T, "Medium", 
+                                   ifelse(cell_lat > 2.5 & breed_cell == T, "High", "opps")))) %>% 
+  filter(!brelatcat == "opps") %>% 
+  filter(!is.na(brelatcat)))) +
+    geom_point(aes(x = cell_lat, 
+                    y = log(vArrMag)), 
+                    #se = FALSE,
+                show.legend = TRUE) +
+    theme_bw() +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.title=element_text(size=10),
+          #legend.position = "none",
+          #legend.justification = "right",
+          #legend.margin=margin(0,0,0,0),
+          #legend.box.margin=margin(-5,0,-5,-7),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          legend.title.align = 0.5,
+          plot.title = element_text(hjust = 0.5, size=10)) +
+    #scale_x_continuous(breaks = seq(-3, 1, 0.5),
+    #                   limits = c(-3, 1, 0.5)) +
+    labs(title="Group mean", x = "Latitude (degrees)", y = "Log(Bird Speed)") +
+    scale_color_viridis(discrete=TRUE, 
+                        name = "Wintering\nLatitude\n(degrees)\n") +
+    ylim(c(4,7)) + 
+    guides(color=guide_legend(override.aes=list(fill=NA))) +
+  facet_rep_wrap(~brelatcat)
+  
+
+pa4 <- ggplot(data = (final %>%
+                        mutate(winlatcat = ifelse(winlat < (-5), 'Long', 
+                                                  ifelse(winlat > (-5) & winlat < 13, "Medium", 
+                                                         ifelse(winlat > 13, "Short", "opps"))))) %>% 
+                filter(species != "Setophaga_tigrina")) +
+    #geom_point(aes(x = cell_lat, 
+    #                 y = log(vArrMag), col = species),
+    #           alpha = 0.3, stroke=0, show.legend = FALSE) +
+    geom_smooth(aes(x = cell_lat, 
+                    y = log(vArrMag), col = species), 
+                se = FALSE, show.legend = TRUE) +
+    theme_bw() +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          #legend.title = element_blank(),
+          legend.position = "none",
+          #legend.justification = "right",
+          #legend.margin=margin(0,0,0,0),
+          #legend.box.margin=margin(-5,0,-5,-7),
+          axis.title.x = element_text(hjust = 0.7),
+          #axis.title.y = element_blank(),
+          legend.title.align = 0.5,
+          plot.title = element_text(hjust = 0.5, size=10)) +
+    labs(title="Species", x = "Latitude (degrees)", y = "Log(Bird Speed)") +
+    scale_color_viridis(discrete=TRUE, 
+                        name = "Wintering\nLatitude\n(degrees)\n") +
+    facet_rep_wrap(~winlatcat) +
+    ylim(c(4,7))
+
+
+#svg(glue("figures/mig_speed_latitude.svg"), 
+#    width = 11, height = 4)
+
+egg::ggarrange(p4, p3, ncol = 2, 
+               top = "Migration speed across latitude", 
+               widths = c(20, 8))
+
+```
+
+```{r speed group ,echo=FALSE,results='hide',fig.keep='all',warning=FALSE,message=FALSE,error=FALSE}
+
+pa3 <- ggplot(data = final,
+  aes(x = cell_lat, 
+                    y = log(vArrMag), col = specat)) +
+  geom_point() +
+    geom_smooth(show.legend = TRUE) +
+    theme_bw() +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.title=element_text(size=10),
+          legend.title.align = 0.5,
+          plot.title = element_text(hjust = 0.5, size=10)) +
+    #scale_x_continuous(breaks = seq(-3, 1, 0.5),
+    #                   limits = c(-3, 1, 0.5)) +
+    labs(title="Group mean", x = "Latitude (degrees)", y = "Log(Bird Speed)") +
+    scale_color_viridis(discrete=TRUE, 
+                        name = "Wintering\nLatitude\n(degrees)\n")
+
+egg::ggarrange(p4, p3, ncol = 2, 
+               top = "Migration speed across latitude", 
+               widths = c(20, 8))
+
+    
+mod_h1 <- lmer(data = final, log(vArrMag) ~ cell_lat * mean_spe + (1|species) + (1|year))
+
+lmer(data = final %>% filter(specat == "Slow"), log(vArrMag) ~ cell_lat + (1|species) + (1|year)) %>% sjPlot::tab_model(., show.re.var= TRUE, digits = 3)
+lmer(data = final %>% filter(specat == "Medium"), log(vArrMag) ~ cell_lat + (1|species) + (1|year)) %>% sjPlot::tab_model(., show.re.var= TRUE, digits = 3)
+lmer(data = final %>% filter(specat == "Fast"), log(vArrMag) ~ cell_lat + (1|species) + (1|year)) %>% sjPlot::tab_model(., show.re.var= TRUE, digits = 3)
+
+sjPlot::tab_model(mod_h1,
+                  show.re.var= TRUE, 
+                  digits = 3)
+
+
+
+
+```
+
+## Test the differences between species and groups:
+```{r linear regression for differences between groups, echo=FALSE, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+
+# does migration distance affects speed?
+modb_1 <- lmer(data = final, vArrMag ~ cell_lat + (1|species) + (1|year)) 
+modb_2 <- lmer(data = final, vArrMag ~ cell_lat + winlatcat + (1|species) + (1|year)) 
+modb_3 <- lmer(data = final, vArrMag ~ cell_lat + winlat + (1|species) + (1|year)) 
+
+head(taicb <- AIC(modb_1,modb_2,modb_3
+                  ) %>% arrange(AIC)) 
+
+sjPlot::tab_model(get(rownames(taicb)[1]),
+                  show.re.var= TRUE, 
+                  digits = 3)
+```
+Latitude is affecting bird speed, wintering latitude is not
+
+```{r GAM for latitude, echo=FALSE, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+# does migration distance affects speed?
+modc_1 <- gam(data = final %>% mutate(species = as.factor(species)), 
+              vArrMag ~ cell_lat + s(species, bs = 're') + s(year, bs = 're')) 
+modc_2 <- gam(data = final %>% mutate(species = as.factor(species)), 
+              vArrMag ~ cell_lat + winlatcat + s(species, bs = 're') + s(year, bs = 're')) 
+modc_3 <- gam(data = final %>% mutate(species = as.factor(species)), 
+              vArrMag ~ cell_lat + winlat + s(species, bs = 're') + s(year, bs = 're')) 
+
+head(taicc <- AIC(modc_1,modc_2,modc_3
+                  ) %>% arrange(AIC)) 
+
+summary(get(rownames(taicc)[1]))
+
+```
+Latitude and groups of birds influencing variability
+
+```{r anomVArr and latitude and mig groups, echo = F, fig.width = 10, fig.height = 3, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+
+p7 <- ggplot(data = (final %>%
+                        mutate(winlatcat = ifelse(winlat < (-5), 'Long', 
+                                                  ifelse(winlat > (-5) & winlat < 13, "Medium", 
+                                                         ifelse(winlat > 13, "Short", "opps")))))) +
+    #geom_point(aes(x = cell_lat, 
+    #                 y = AnomVArr, col = species),
+    #           alpha = 0.3, stroke=0, show.legend = FALSE) +
+    geom_smooth(aes(x = cell_lat, 
+                    y = AnomVArr, col = winlatcat), 
+                    #se = FALSE,
+                show.legend = TRUE) +
+    theme_bw() +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.title=element_text(size=10),
+          #legend.position = "none",
+          #legend.justification = "right",
+          #legend.margin=margin(0,0,0,0),
+          #legend.box.margin=margin(-5,0,-5,-7),
+          #axis.title.x = element_blank(),
+          #axis.title.y = element_blank(),
+          legend.title.align = 0.5,
+          plot.title = element_text(hjust = 0.5, size=10)) +
+    #scale_x_continuous(breaks = seq(-3, 1, 0.5),
+    #                   limits = c(-3, 1, 0.5)) +
+    labs(title="Group mean", x = "Latitude (degrees)", y = "Speed anomaly") +
+    scale_color_viridis(discrete=TRUE, 
+                        name = "Wintering\nLatitude\n(degrees)\n") +
+    guides(color=guide_legend(override.aes=list(fill=NA)))
+  
+
+p8 <- ggplot(data = (final %>%
+                        mutate(winlatcat = ifelse(winlat < (-5), 'Long', 
+                                                  ifelse(winlat > (-5) & winlat < 13, "Medium", 
+                                                         ifelse(winlat > 13, "Short", "opps"))))) %>% 
+                filter(species != "Setophaga_tigrina")) +
+    #geom_point(aes(x = cell_lat, 
+    #                 y = AnomVArr, col = species),
+    #           alpha = 0.3, stroke=0, show.legend = FALSE) +
+    geom_smooth(aes(x = cell_lat, 
+                    y = AnomVArr, col = species), 
+                se = FALSE, show.legend = TRUE) +
+    theme_bw() +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          #legend.title = element_blank(),
+          legend.position = "none",
+          #legend.justification = "right",
+          #legend.margin=margin(0,0,0,0),
+          #legend.box.margin=margin(-5,0,-5,-7),
+          axis.title.x = element_text(hjust = 0.7),
+          #axis.title.y = element_blank(),
+          legend.title.align = 0.5,
+          plot.title = element_text(hjust = 0.5, size=10)) +
+    labs(title="Species", x = "Latitude (degrees)", y = "Speed anomaly") +
+    scale_color_viridis(discrete=TRUE, 
+                        name = "Wintering\nLatitude\n(degrees)\n") +
+    facet_rep_wrap(~winlatcat)
+
+egg::ggarrange(p7, p8, ncol = 2, 
+               top = "Migration speed variability across latitude", 
+               widths = c(7, 14))
+
+```
+
+## is it different between migratory and breeding range?
+
+```{r differences between migratory and breeding range, fig.width = 8, fig.height = 3, echo = F, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+
+ggplot(data = (final %>%
+                 mutate(winlatcat = ifelse(winlat < (-5), 'Long', 
+                                           ifelse(winlat > (-5) & winlat < 13, "Medium", 
+                                                  ifelse(winlat > 13, "Short", "opps"))))) %>% 
+         filter(species != "Setophaga_tigrina",
+                !is.na(mig_cell), 
+                #winlatcat != "Long"
+                )) +
+  geom_point(aes(x = cell_lat, 
+                  y = log(vArrMag), alpha = 0.9#, col = winlatcat
+  )) +
+  geom_smooth(aes(x = cell_lat, 
+                  y = log(vArrMag)#, col = winlatcat
+                  ), formula = y ~ splines::bs(x, 3), 
+              se = FALSE, show.legend = TRUE) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10)) +
+  #labs(title="Species", x = "Latitude (degrees)", y = "Speed anomaly") +
+  scale_color_viridis(discrete=TRUE, 
+                      name = "Wintering\nLatitude\n(degrees)\n") +
+  facet_rep_wrap(~mig_cell + winlatcat, scales = "free_y")
+
+ggplot(data = (final %>%
+                        mutate(winlatcat = ifelse(winlat < (-5), 'Long', 
+                                                  ifelse(winlat > (-5) & winlat < 13, "Medium", 
+                                                         ifelse(winlat > 13, "Short", "opps"))))) %>% 
+                filter(species != "Setophaga_tigrina")) +
+    #geom_point(aes(x = cell_lat, 
+    #                 y = AnomVArr, col = species),
+    #           alpha = 0.3, stroke=0, show.legend = FALSE) +
+    geom_point(aes(x = cell_lat, 
+                    y = AnomVArr)) + 
+    geom_smooth(aes(x = cell_lat, 
+                    y = AnomVArr), 
+                se = FALSE, show.legend = TRUE) +
+    theme_bw() +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          #legend.title = element_blank(),
+          legend.position = "none",
+          #legend.justification = "right",
+          #legend.margin=margin(0,0,0,0),
+          #legend.box.margin=margin(-5,0,-5,-7),
+          #axis.title.x = element_text(hjust = 0.7),
+          #axis.title.y = element_blank(),
+          legend.title.align = 0.5,
+          plot.title = element_text(hjust = 0.5, size=10)) +
+    #labs(title="Species", x = "Latitude (degrees)", y = "Speed anomaly") +
+    scale_color_viridis(discrete=TRUE, 
+                        name = "Wintering\nLatitude\n(degrees)\n") +
+    facet_rep_wrap(~mig_cell)
+
+
+ggplot() +
+  geom_point(data = final %>% filter(breed_cell == T, mig_cell == F),
+             aes(x = cell_lat, y = log(vArrMag)), color = "red", alpha = 0.1) +
+  geom_point(data = final %>% filter(mig_cell == T, breed_cell == F),
+              aes(x = cell_lat, y = log(vArrMag)), color = "blue", alpha = 0.1) +
+  geom_smooth(data = final %>% filter(mig_cell == T, breed_cell == F),
+              aes(x = cell_lat, y = log(vArrMag)), color = "blue",
+              se = F) +
+  geom_smooth(data = final %>% filter(breed_cell == T, mig_cell == F),
+              aes(x = cell_lat, y = log(vArrMag)), color = "red",
+              se = F) +
+  theme_bw() 
+
+
+```
+
+# ANOMALIES
+## anomaly on bird speed and anomaly on lag
+```{r anomaly on bird speed and anomaly on lag, fig.width = 8, fig.height = 3, echo = F, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+
+ggplot(final) +
+  theme_bw() +
+  geom_point(aes(y = AnomLag, 
+                 x = AnomVArr)) +
+  geom_smooth(aes(y = AnomLag, 
+                  x = AnomVArr)) +
+  #scale_color_viridis(name = "Migrant\nGroups") + 
+  guides(color=guide_legend(override.aes=list(fill=NA)))  +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title=element_text(size=9),
+        #axis.title.x = element_blank(),
+        #axis.title.y = element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10)) +
+  labs( x = "Anomaly in Lag", y = "Anomaly in bird speed") +
+  facet_wrap(~specat, scales='free_x')
+
+```
+
+## variance on anomaly on bird speed and anomaly on lag variance
+```{r anomaly on bird speed and anomaly on lag, fig.width = 8, fig.height = 3, echo = F, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+# small variance in lag with a big variance in speed
+ggplot(final) +
+  theme_bw() +
+  geom_point(aes(y = varanolag, 
+                 x = varanospe)) +
+  geom_smooth(aes(y = varanolag, 
+                  x = varanospe)) +
+  #scale_color_viridis(name = "Migrant\nGroups") + 
+  guides(color=guide_legend(override.aes=list(fill=NA)))  +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title=element_text(size=9),
+        #axis.title.x = element_blank(),
+        #axis.title.y = element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10)) +
+  labs( x = "Anomaly in Lag", y = "Anomaly in bird speed") #+
+  #facet_wrap(~specat, scales='free_x')
+
+```
+
+## anomaly on bird speed and lag
+```{r anomaly on bird speed and lag, fig.width = 8, fig.height = 3, echo = F, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+
+ggplot(final) +
+  theme_bw() +
+  geom_point(aes(y = lag, 
+                 x = AnomVArr)) +
+  geom_smooth(aes(y = lag, 
+                  x = AnomVArr)) +
+  #scale_color_viridis(name = "Migrant\nGroups") + 
+  guides(color=guide_legend(override.aes=list(fill=NA)))  +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title=element_text(size=9),
+        #axis.title.x = element_blank(),
+        #axis.title.y = element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10)) +
+  labs( x = "Anomaly in Lag", y = "Anomaly in bird speed") +
+  facet_wrap(~specat, scales='free_x')
+
+```
+
+## anomaly on green up speed and anomaly on bird speed
+```{r anomaly on green up speed and bird speed, fig.width = 8, fig.height = 3, echo = F, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+
+ggplot(final %>% 
+  filter(!brelatcat == "opps") %>% 
+  filter(!is.na(brelatcat))) +
+  theme_bw() +
+  geom_point(aes(x = AnomVGr, 
+                 y = AnomVArr)) +
+  geom_smooth(aes(x = AnomVGr, 
+                  y = AnomVArr)) +  #scale_color_viridis(name = "Migrant\nGroups") + 
+  guides(color=guide_legend(override.aes=list(fill=NA)))  +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title=element_text(size=9),
+        #axis.title.x = element_blank(),
+        #axis.title.y = element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10)) +
+  labs( x = "Anomaly green up speed", y = "Anomaly in bird speed") +
+  facet_rep_wrap(~specat, scales='free_x', ncol = 3)
+
+```
+
+## anomaly on green up dates and anomaly on bird speed
+```{r anomaly on green up date and bird speed, fig.width = 8, fig.height = 3, echo = F, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+
+ggplot(final %>% 
+  filter(!brelatcat == "opps") %>% 
+  filter(!is.na(brelatcat))
+    ) +
+  theme_bw() +
+  geom_point(aes(x = AnomDGr, 
+                 y = AnomVArr)) +
+  geom_smooth(aes(x = AnomDGr, 
+                  y = AnomVArr)) +  #scale_color_viridis(name = "Migrant\nGroups") + 
+  #guides(color=guide_legend(override.aes=list(fill=NA)))  +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title=element_text(size=9),
+        #axis.title.x = element_blank(),
+        #axis.title.y = element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10)) +
+  labs( x = "Anomaly green up speed", y = "Anomaly in bird speed") +
+  facet_wrap(~specat, scales='free_x')
+
+```
+
+## green up speed and bird migration speed
+```{r green up speed and bird speed, fig.width = 8, fig.height = 3, echo = F, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+
+ggplot(final %>% 
+  filter(species != "Setophaga_tigrina")) +
+  theme_bw() +
+  geom_point(aes(x = log(vGrMag), 
+                  y = log(vArrMag), col = winlatcat)) +
+  geom_smooth(aes(x = log(vGrMag), 
+                  y = log(vArrMag), col = winlatcat)) +
+  scale_color_viridis(discrete=TRUE, name = "Migrant\nGroups") + 
+  guides(color=guide_legend(override.aes=list(fill=NA)))  +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title=element_text(size=9),
+        #axis.title.x = element_blank(),
+        #axis.title.y = element_blank(),
+        legend.title.align = 0.5,
+        plot.title = element_text(hjust = 0.5, size=10)) +
+  labs(title="Group models", x = "Green-up speed", y = "Bird speed") +
+  facet_wrap(~winlatcat)
+
+```
+
+# abnormal years (green up SPEED and bird speed)
+anomaly on green-up speed and bird speed
+
+```{r anomaly on green-up speed and bird speed anomaly, out.width = "50%", echo = F, results='hide', fig.keep='all', warning=FALSE, message=FALSE, error=FALSE}
+
+p12 <- ggplot(final) +
+  geom_point(aes(x = AnomVGr, y = AnomVArr, col = winlat)) +
+  scale_color_viridis(name = "Winter distance") +
+  geom_smooth(aes(x = AnomVGr, y = AnomVArr)) +
+  theme_bw() +
+  facet_rep_wrap(~winlatcat)
+
+p13 <- ggplot(final) +
+  #geom_point(aes(x = AnomVGr, y = log(vArrMag), col = winlat)) +
+  scale_color_viridis(name = "Winter distance") +
+  geom_smooth(aes(x = AnomVGr, y = AnomVArr)) +
+  theme_bw() +
+  facet_rep_wrap(~winlatcat)
+
+egg::ggarrange(p12, p13, ncol = 1, 
+               top = "Migration speed", widths = c(7))
+```
+
+# EARLY ARRIVERS
+do birds taht arrive earlier are slower?
+
+# change in speed and magnitude in mugration route - faster, and less change?
+
+# body size? diet?
+## different lags from different diets (herbivoros with smaller lags) (ls sorte 2021)
+## big guys change more (usui), big are slower (usui: Additionally, body size is expected to be negatively correlated with the magnitude of advance in spring migratory phenology, as migration in larger birds is hypothesized to be more time-canalized due to longer moulting times and slower migration speeds (Hedenström 2006, 2008).). OR not? they found different results
+##  omnivores, herbivores, herbivore–granivores, granivores,nectarivores, insectivores
+
+# speed anomaly and lag anmaly - im behind, speed up!, im in front, stop!
+
+# relationships are weaker DURING the breeding season
+
+# specieslists vs generalists (usui: Running counter to this prediction, however, previous comparative studies have found that generalist species are more responsive than specialists to climate change (Végvári et al. 2010; Moussus et al. 2011; Hurlbert & Liang 2012).)
+
+# grat responses with latitude (uhi (Both et al. 2004; While & Uller 2014) )
+
+# la sorte 2017 - more variation within the same year in speed, to adjust
+
+# control random effect for family
+# diffrence between bred lat and winter lat - distance!
+
+# faster more flexible!
+
+# diurnal vs nocturnal migrants
+
+# only early arrivers are arriving earlier
+
+# maximum migration speed
+
+# bigger effects of climate change in northern lats We predict the magnitude of phenological change increases with increasing latitude across North America during spring movements. 
