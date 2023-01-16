@@ -33,7 +33,7 @@ library(janitor)
 library(ggrepel)
 
 # Load bird and green-up data -----------------------------
-#final <- read_rds(file = "data/final.rds")
+final <- read_rds(file = "data/final.rds")
 #annual <- read_rds(file = "data/annual.rds")
 velG <- read_rds(file = "data/velocityG.rds") %>% as_tibble()
 finalG <- read_rds(file = "data/birdgreen.rds") %>% 
@@ -41,7 +41,6 @@ finalG <- read_rds(file = "data/birdgreen.rds") %>%
   distinct()
 velocityB <- readRDS(file = "data/velocityB.rds")
 cellcoor <- readRDS(file = "data/cellcoor.rds")
-final <- readRDS(file = "data/birdgreen.rds")
 
 # make sure all rows have cell coordinates
 celco <- final %>% dplyr::select(cell, cell_lat) %>% distinct() %>% filter(!is.na(cell_lat))
