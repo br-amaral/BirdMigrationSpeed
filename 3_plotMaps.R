@@ -9,54 +9,188 @@ library(viridis)
 library("RColorBrewer")
 library(glue)
 library(viridis)
+library(scales) # histogram
 
 # load data and source 'base' maps ----------------------
 source("~/Documents/GitHub/BirdMigrationSpeed/map.R")
 rm(list= ls()[!(ls() %in% c('rr', 'rrb', 'pp'))])
-velB <- read_rds("data/velocityB.rds")
 cellcoor <- read_rds("data/cellcoor.rds") 
 final <- read_rds(file = "data/final.rds")
 annual <- read_rds(file = "data/annual.rds")
+velocityB <- read_rds(file = "data/velocityB.rds")
+
+
+velocityB <- read_rds("data/velocityB.rds")
+predsG <- read_rds("data/cellaveG.rds")
+load("~/Library/Mobile Documents/com~apple~CloudDocs/MigratorySensitivity/Data/species_Grid.RData")
+spskey <- read_csv("data/source/spskey.csv")
+cells <- read_rds("data/cellcoor.rds")
+
+velocityB <-left_join(velocityB, cells, by = "cell")
+colnmaes <- colnames
+# individual species velocity maps --------------------------------
+
+plot_mapvel2 <- function(sps, year){
+  
+  preds <- velocityB
+  
+  if(year == "all") {preds2 <- preds %>% 
+    filter(species == sps)}
+  
+  if(year != "all") {preds2 <- sps %>% 
+    filter(species == sps,
+           year == year)}
+  
+  cell_sps <- sort(unique(preds2$cell))
+  
+  preds2 <- preds2 %>% 
+    filter(vArrMag < 10000) %>% 
+    mutate(
+      # x = (cell_lng + 10) * cos(ang * pi / 180),
+      # y = (cell_lat + 10) * sin(ang * pi / 180)
+      x = cell_lng + 3 * cos(angB * pi / 180),
+      y = cell_lat + 3 * sin(angB * pi / 180)
+    ) %>% 
+    mutate(vArrMag_s = scale(vArrMag))
+  
+  preds3 <- as.data.frame(matrix(data = NA, ncol = 8, nrow = length(cell_sps)))
+  colnames(preds3) <- c("species","year","cell","cell_lng","cell_lat","x","y","mag_s")
+  
+  for(i in 1:length(cell_sps)){
+    celll <- cell_sps[i]
+    pred_loop <- preds2 %>% filter(cell == celll)
+    if(nrow(pred_loop) == 1) {
+      preds3$year[i] <- pred_loop$year
+      preds3$cell[i] <- pred_loop$cell
+      preds3$cell_lng[i] <- pred_loop$cell_lng
+      preds3$cell_lat[i] <- pred_loop$cell_lat
+      preds3$x[i] <- pred_loop$x
+      preds3$y[i] <- pred_loop$y
+      preds3$mag_s[i] <- pred_loop$vArrMag_s
+      
+    } else {
+      preds3$year[i] <- pred_loop$year[1]
+      preds3$cell[i] <- pred_loop$cell[1]
+      preds3$cell_lng[i] <- pred_loop$cell_lng[1]
+      preds3$cell_lat[i] <- pred_loop$cell_lat[1]
+      preds3$x[i] <- mean(x = pred_loop$x)
+      preds3$y[i] <- mean(x = pred_loop$y)
+      preds3$mag_s[i] <- mean(pred_loop$vArrMag_s)
+    }
+  }
+  
+  preds3$species <- sps
+  
+  cell_grid <- get(paste('cell_grid', 
+                         as.character(spskey[which(spskey$sci_name == sps),1]), 
+                         sep="_")) 
+  
+  cell_grid2 <- left_join(cell_grid, preds3, by = "cell")
+  
+  MIN <- round((floor((min(cell_grid2$mag_s, na.rm = TRUE))*10)/10), 1)
+  MAX <- round((ceiling((max(cell_grid2$mag_s, na.rm = TRUE))*10)/10), 1)
+  
+  
+  #rr +
+  #rrb + 
+  pp +
+    geom_polygon(data = cell_grid2, aes(x = long, 
+                                        y = lat, group = group, 
+                                        fill = mag_s), alpha = 0.8
+                 ) +
+    geom_path(data = cell_grid2, aes(x = long, 
+                                     y = lat, group = group), 
+              #alpha = 0.4, 
+              color = 'darkgrey') +
+    geom_segment(data = preds3, aes(x = cell_lng, y = cell_lat, 
+                                    xend = x, yend = y,
+                                    group = cell), colour = "black",
+                 arrow = arrow(length = unit(0.1, "cm")), size = 0.5) +
+    ggtitle(glue("{sps} {year}")) +
+    theme_bw() +
+    theme(#legend.position = "none",
+      panel.grid.major = element_line(color = alpha('black', 0.2),
+                                      size = 0.5),
+      panel.ontop = TRUE,
+      plot.title = element_text(hjust = 0.5),
+      panel.background = element_rect(fill = NA),
+      legend.title=element_text(size=13),
+      legend.spacing.y = grid::unit(0.5, "cm"),
+      legend.text=element_text(size=rel(1.2)),
+      legend.key.height=grid::unit(0.9,"cm"),
+      legend.title.align=0.5,
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),
+      axis.ticks.x=element_blank(),
+      axis.title.y=element_blank(),
+      axis.text.y=element_blank(),
+      axis.ticks.y=element_blank(),
+      panel.border = element_blank()) +
+    scale_fill_viridis(option="magma",limits = c(MIN, MAX), na.value="white") 
+  
+  
+  pp +
+    geom_polygon(data = cell_grid2, aes(x = long, 
+                                        y = lat, group = group, 
+                                        fill = mag_s), alpha = 0.4
+    ) +
+    geom_path(data = cell_grid2, aes(x = long, 
+                                     y = lat, group = group), 
+              #alpha = 0.4, 
+              color = 'black') +
+    geom_segment(data = preds3, aes(x = cell_lng, y = cell_lat, 
+                                    xend = x, yend = y,
+                                    group = cell), colour = "black",
+                 arrow = arrow(length = unit(0.1, "cm")), size = 0.5) +
+    ggtitle(glue("{sps} {year}")) +
+    theme_bw() +
+    theme(#legend.position = "none",
+      panel.grid.major = element_line(color = alpha('black', 0.2),
+                                      size = 0.5),
+      panel.ontop = TRUE,
+      plot.title = element_text(hjust = 0.5),
+      panel.background = element_rect(fill = NA),
+      legend.title=element_text(size=13),
+      legend.spacing.y = grid::unit(0.5, "cm"),
+      legend.text=element_text(size=rel(1.2)),
+      legend.key.height=grid::unit(0.9,"cm"),
+      legend.title.align=0.5,
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),
+      axis.ticks.x=element_blank(),
+      axis.title.y=element_blank(),
+      axis.text.y=element_blank(),
+      axis.ticks.y=element_blank(),
+      panel.border = element_blank()) +
+    scale_fill_viridis(option="magma",limits = c(MIN, MAX)#, na.value="white"
+                       ) 
+
+  pp +
+    geom_polygon(data = cell_grid2, aes(x = long, 
+                                    y = lat, group = group, 
+                                    fill = mag_s), alpha = 0.6) +
+    geom_path(data = cell_grid2, aes(x = long, 
+                                 y = lat, group = group), 
+              alpha = 0.4, color = 'black') +
+    scale_fill_gradientn(trans='exp',
+                         colors = c('darkorange2','darkorchid4',"blue"),
+                         #limits = c(MIN, MAX),
+                         breaks = log(c(1,5,10,15,20)), labels = c(1,5,10,15,20)
+                         ) +
+    theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+  
+}
+
+plot_mapvel2("Tachycineta_bicolor", "all")
+plot_mapvel2("Vireo_olivaceus", "all")
+plot_mapvel2("Setophaga_americana", "all")
+plot_mapvel2("Setophaga_discolor", "all")
+
+
 
 ## PANEL 1 ---------------------------------------
-p <- ggplot(final) + geom_histogram(aes(x = vArrAng ))
-data<-ggplot_build(p)$data
-hist_peak<-data[[1]]%>%filter(y==max(y))%>%.$x
-ggplot(final) + geom_histogram(aes(x = vArrAng )) + geom_vline(xintercept = hist_peak)
-
-preds <- left_join(velocityB, cells[,1:3], by= "cell")
-hist(preds2$vArrAng, breaks = 30)
-(qts <- quantile(preds2$vArrAng,probs=c(.25,.75), na.rm = T))
-(qts <- quantile(preds2$vArrAng,probs=c(.05,.95), na.rm = T))
-
-abline(v=qts[1],col="red")
-abline(v=qts[2],col="red")
 
 
-preds$ang <- NA
-for(i in 1:nrow(preds)){
-  if(!is.na(preds$vArrAng[i]) & (preds$vArrAng[i] + 90)>360) 
-  {preds$ang[i] = (preds$vArrAng[i] + 90 - 360)}
-  if(!is.na(preds$vArrAng[i]) & (preds$vArrAng[i] + 90)<360) 
-  {preds$ang[i] = (preds$vArrAng[i] + 90)}
-}
-hist(preds$ang, breaks = 30)
-(qts <- quantile(preds$ang,probs=c(.25,.75), na.rm = T))
-(qts <- quantile(preds$ang,probs=c(.05,.95), na.rm = T))
-abline(v=qts[1],col="blue")
-abline(v=qts[2],col="blue")
-
-for(i in 1:nrow(final)){
-  if(!is.na(final$vArrAng[i]) & (final$vArrAng[i] + 90)>360) 
-  {final$vArrAng[i] = (final$vArrAng[i] + 90 - 360)} 
-  if(!is.na(final$vArrAng[i]) & (final$vArrAng[i] + 90)<360) 
-  {final$vArrAng[i] = (final$vArrAng[i] + 90)}
-}
-
-p <- ggplot(final) + geom_histogram(aes(x = vArrAng ))
-data<-ggplot_build(p)$data
-hist_peak<-data[[1]]%>%filter(y==max(y))%>%.$x
-ggplot(final) + geom_histogram(aes(x = vArrAng )) + geom_vline(xintercept = hist_peak)
 
 # sps <- "Vireo_olivaceus"   
 # yearx <- "all"
@@ -66,20 +200,20 @@ ggplot(final) + geom_histogram(aes(x = vArrAng )) + geom_vline(xintercept = hist
 plot_mapvel_c <- function(sps, yearx, maptype){ # maptype = map hex hexn
   
   if(sps == "all") {
-    if(yearx == "all") {preds2 <- velB}
+    if(yearx == "all") {preds2 <- velocityB}
     
-    if(yearx != "all") {preds2 <- velB %>% 
+    if(yearx != "all") {preds2 <- velocityB %>% 
       filter(year == yearx)}
   } else { 
-    if(yearx == "all") {preds2 <- velB %>% 
+    if(yearx == "all") {preds2 <- velocityB %>% 
       filter(species == sps)}
     
-    if(yearx != "all") {preds2 <- velB %>% 
+    if(yearx != "all") {preds2 <- velocityB %>% 
       filter(species == sps,
              year == yearx)}
   }
   
-  cell_sps <- sort(unique(velB$cell))
+  cell_sps <- sort(unique(velocityB$cell))
   
   preds2 <- preds2 %>% 
     mutate(
@@ -298,21 +432,21 @@ plot_mapvel_c <- function(sps, yearx, maptype){ # maptype = map hex hexn
 plot_mapvel_a <- function(sps, yearx, maptype){ # maptype = map hex hexn
   
   if(sps == "all") {
-    if(yearx == "all") {preds2 <- velB}
+    if(yearx == "all") {preds2 <- velocityB}
     
-    if(yearx != "all") {preds2 <- velB %>% 
+    if(yearx != "all") {preds2 <- velocityB %>% 
       filter(year == yearx)}
   } else { 
-    if(yearx == "all") {preds2 <- velB %>% 
+    if(yearx == "all") {preds2 <- velocityB %>% 
       filter(species == sps)}
     
-    if(yearx != "all") {preds2 <- velB %>% 
+    if(yearx != "all") {preds2 <- velocityB %>% 
       filter(species == sps,
              year == yearx)}
   }
   
   
-  cell_sps <- sort(unique(velB$cell))
+  cell_sps <- sort(unique(velocityB$cell))
   
   preds2 <- preds2 %>% 
     mutate(
@@ -397,8 +531,13 @@ plot_mapvel_a <- function(sps, yearx, maptype){ # maptype = map hex hexn
       panel.border = element_blank()) #+ sc
 }
 
-#plot_mapvel_a("Tachycineta_bicolor", "all", "hex")
+plot_mapvel_a("Tachycineta_bicolor", "all", "hex")
 plot_mapvel_c("all", "all", "hex")
+
+
+
+
+
 
 
 # PANEL 2 ------------------------------------------------------------------------------------
@@ -408,72 +547,7 @@ spse <- names(spse[1:10])
 my_breaks2 <- c(25, 50, 75, 100)
 my_breaks1 <- log(my_breaks2)
 
-svg(glue("figures/lat_spslag_10.svg"), 
-    width = 5, height = 4)
-final %>% 
-  filter(species %in% spse,
-         mig_cell == F) %>% 
-  ggplot() +
-  geom_smooth(aes(x = cell_lat2,
-                 y = lag, col = species), se = F) +
-  geom_hline(yintercept = 0, #linetype="dotted", 
-             color = "black", size=0.5, alpha = 0.8) +
-  theme_bw() +
-  theme(legend.position = "none",
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 15),
-        axis.text = element_text(size = 13)) +
-  labs(#title = "Lag", 
-    y = "Lag (days)", x = "Latitude (degrees)") +
-  scale_x_continuous(limits = c(26,47))
-dev.off()
 
-svg(glue("figures/lat_spsspe_10.svg"), 
-    width = 5, height = 4)
-final %>% 
-  filter(species %in% spse,
-         mig_cell == F) %>% 
-  ggplot() +
-  geom_smooth(aes(x = cell_lat2,
-                 y = log(vArrMag), col = species), se = F) +
-  theme_bw() +
-  theme(legend.position = "none",
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 15),
-        axis.text = element_text(size = 13)) +
-  labs(#title = "Lag", 
-    y = "Bird speed (km/day, log scale)", x = "Latitude (degrees)")  +
-  scale_y_continuous(limits = c(3, 4.6), 
-    trans = "log",
-    breaks = my_breaks1, 
-    labels = my_breaks2) +
-  scale_x_continuous(limits = c(26,47))
-dev.off()
-
-svg(glue("figures/lat_guspe_yr.svg"), 
-    width = 5, height = 4)
-final %>% 
-  filter(mig_cell == F)%>% 
-  ggplot() +
-  geom_smooth(aes(x = cell_lat2,
-                 y = log(vGrMag), col = as.factor(year)), se = F) +
-  #geom_hline(yintercept = 0, #linetype="dotted", 
-  #           color = "black", size=0.5, alpha = 0.8) +
-  theme_bw() +
-  theme(legend.position = "none",
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 15),
-        axis.text = element_text(size = 13)) +
-  labs(#title = "Lag", 
-    y = "Green-up speed (km/day, log scale)", x = "Latitude (degrees)") +
-  scale_y_continuous(limits = c(3, 4.6), 
-                     trans = "log",
-                     breaks = my_breaks1, 
-                     labels = my_breaks2) +
-  scale_x_continuous(limits = c(26,47)) 
 
 dev.off()
 
@@ -566,115 +640,11 @@ ggplot(data = tab, aes(b,b)) +
                ".", 250)) 
 dev.off()
 
-final %>% filter(mig_cell == F) %>% 
-  ggplot() +
-  geom_smooth(aes(x = cell_lat2,
-                  y = lag, col = as.factor(year)), se = F) +
-  geom_hline(yintercept = 0, #linetype="dotted", 
-             color = "black", size=0.5, alpha = 0.8) +
-  theme_bw() +
-  theme(legend.position = "none",
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 15),
-        axis.text = element_text(size = 13)) +
-  labs(#title = "Lag", 
-    y = "Lag (days)", x = "Latitude (degrees)") #+ facet_wrap(~year)
-
-final %>% filter(mig_cell == F, year > 2005) %>% 
-  ggplot() +
-  geom_smooth(aes(x = cell_lat2,
-                  y = log(vArrMag), col = as.factor(year)
-  ), se = F) +
-  theme_bw() +
-  theme(legend.position = "none",
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 15),
-        axis.text = element_text(size = 13)) +
-  labs(#title = "Lag", 
-    y = "Lag (days)", x = "Latitude (degrees)") +
-  scale_y_continuous(#trans='log10', 
-    breaks = log(c(30, 40, 50, 60, 70)), labels = c(30, 40, 50, 60, 70)) +
-  labs(y = "Bird speed (km/day, log scale)")
 
 
-# FIGURE 3 ---------------------------------------
 
-pan2b_tab <- final %>% dplyr::select(cell_lat, AnomDArr, AnomDGr, AnomVArr, species) %>% 
-  mutate(cell_cat = case_when(cell_lat < -10 ~ -12.5,
-                              -10 <= cell_lat & cell_lat < -5 ~ -7.5,
-                              -5 <= cell_lat & cell_lat < 0 ~ -2.5,
-                              0 <= cell_lat & cell_lat < 5 ~ 2.5,
-                              5 <= cell_lat ~ 7.5),
-         cell_cat = as.factor(cell_cat))
 
-vars2 <- pan2b_tab %>% 
-  group_by(cell_cat) %>% 
-  summarise(sdADAr = sd(AnomDArr, na.rm = T),
-            sdADGr =sd(AnomDGr, na.rm = T),
-            sdVAr = sd(AnomVArr, na.rm = T))
 
-pan2b_ba <- ggplot(data = pan2b_tab %>% filter(!is.na(cell_cat))) +
-  geom_jitter(aes(cell_cat, AnomDArr), alpha = 0.08, col = "orange") +
-  geom_hline(yintercept = 0, 
-             color = "black", size=0.7) +
-  geom_boxplot(aes(cell_cat, AnomDArr), alpha = 1, width = 0.25) +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.title = element_text(size = 10),
-        #axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        #axis.text.y=element_blank(),
-        legend.title.align = 0.5,
-        plot.title = element_text(hjust = 0.5, size=10)) +
-  labs(y = "Anomaly in bird arrival date", x = "Latitude (degrees)\n") +
-  scale_x_discrete(breaks = c(-12.5, -7.5, -2.5, 2.5, 7.5),
-                   labels = c("[25,30)","[30,-5)","[35,40)","[40,45)","[45.50)")) +
-  coord_flip() + ylim(-30,30)
-
-pan2b_ga <- ggplot(data = pan2b_tab %>% filter(!is.na(cell_cat))) +
-  geom_jitter(aes(cell_cat, AnomDGr), alpha = 0.1, col = "orange") +
-  geom_hline(yintercept = 0, 
-             color = "black", size=0.7) +
-  geom_boxplot(aes(cell_cat, AnomDGr), alpha = 0.6, width = 0.25) +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.title = element_text(size = 10),
-        #axis.title.x = element_blank(),
-        #axis.title.y = element_blank(),
-        #axis.text.x=element_blank(),
-        legend.title.align = 0.5,
-        plot.title = element_text(hjust = 0.5, size=10)) +
-  labs(y = "Anomaly in green-up arrival date", x = "Latitude (degrees)\n") +
-  scale_x_discrete(breaks = c(-12.5, -7.5, -2.5, 2.5, 7.5),
-                   labels = c("[25,30)","[30,-5)","[35,40)","[40,45)","[45.50)")) +
-  coord_flip() #+ ylim(-30,30)
-
-pan2b_bs <- ggplot(data = pan2b_tab %>% filter(!is.na(cell_cat))) +
-  geom_jitter(aes(cell_cat, AnomVArr, col = species), alpha = 0.1)+ #"orange") +
-  geom_hline(yintercept = 0, 
-             color = "black", size=0.7) +
-  geom_boxplot(aes(cell_cat, AnomVArr), alpha = 0.6, width = 0.25) +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.title = element_text(size = 10),
-        #axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        #axis.text.y=element_blank(),
-        legend.title.align = 0.5,
-        plot.title = element_text(hjust = 0.5, size=10)) +
-  labs(y = "Anomaly in bird speed", x = "Latitude (degrees)\n") +
-  scale_x_discrete(breaks = c(-12.5, -7.5, -2.5, 2.5, 7.5),
-                   labels = c("[25,30)","[30,-5)","[35,40)","[40,45)","[45.50)")) +
-  coord_flip() #+ ylim(-30,30)
-svg(glue("figures/fig3.svg"), 
-    width = 4, height = 7)
-egg::ggarrange(pan2b_ba, pan2b_ga, pan2b_bs, ncol = 1)
-dev.off()
 
 # PANEL 3 -------------------------
 ggplot(data = final %>% filter(species != "Pipilo_erythrophthalmus")) + # no estimates, no neighbors
@@ -793,8 +763,6 @@ ggplot(data = final %>% filter(species != "Pipilo_erythrophthalmus")) +
         plot.title = element_text(hjust = 0.5, size=10),
         axis.text.x = element_text(angle = 90, vjust = 0.5,
                                    hjust=1, face = "italic")) +
-  #labs(title="Species") +
-  #scale_fill_viridis(name = "Diet") +
   labs(y = "Log(Speed)\n") 
 
 
@@ -925,8 +893,6 @@ lag2 <- ggplot(data = lagA_tab %>% filter(!is.na(cell_cat))) +
   scale_x_discrete(breaks = c(-12.5, -7.5, -2.5, 2.5, 7.5),
                    labels = c("[25,30)","[30,-5)","[35,40)","[40,45)","[45.50)")) +
   coord_flip() #+ ylim(-30,30)
-
-
 
 svg(glue("figures/fig6.svg"), 
     width = 4, height = 5)
