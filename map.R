@@ -99,7 +99,7 @@ cell_grid_tab4 <- readRDS("~/Library/Mobile Documents/com~apple~CloudDocs/Migrat
 for_gr <- readRDS('~/Library/Mobile Documents/com~apple~CloudDocs/MigratorySensitivity//Data/for_green-up_dl.rds')
 
 for_gr2 <- left_join(for_gr, cellnumbs, by = "cell") %>% 
-  dplyr::select(-cell) %>% 
+  select(-cell) %>% 
   rename(cell = cell2)
 
 #merge hex spatial data with HM data
