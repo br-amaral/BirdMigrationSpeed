@@ -1,0 +1,115 @@
+Species,Common name,Order,Included,Mig Pace (days / deg latitude),Arr date (ordinal date),Overwinterlatitude,PC1,species
+Archilochus colubris,Ruby-throated Hummingbird,Caprimulgiformes,Yes,2.95,125.2,16.46,-0.32,Archilochus_colubris
+Catharus fuscescens,Veery,Passeriformes,Yes,2.06,127.25,-13.56,1.92,Catharus_fuscescens
+Coccyzus americanus,Yellow-billed Cuckoo,Cuculiformes,Yes,2.12,131.46,-9.52,1.94,Coccyzus_americanus
+Contopus virens,Eastern Wood-Pewee,Passeriformes,Yes,2.15,131.16,-1.15,1.52,Contopus_virens
+Dolichonyx oryzivorus,Bobolink,Passeriformes,Yes,1.52,127.09,-20.47,2.71,Dolichonyx_oryzivorus
+Dumetella carolinensis,Gray Catbird,Passeriformes,Yes,1.83,126.28,19.78,0.58,Dumetella_carolinensis
+Empidonax minimus,Least Flycatcher,Passeriformes,Yes,1.46,125.95,17.71,0.98,Empidonax_minimus
+Empidonax traillii,Willow Flycatcher,Passeriformes,Yes,0.99,137.28,7.19,2.53,Empidonax_traillii
+Empidonax virescens,Acadian Flycatcher,Passeriformes,Yes,2.04,128.28,7.09,1.08,Empidonax_virescens
+Geothlypis formosa,Kentucky Warbler,Passeriformes,Yes,2.31,113.37,14.62,-0.37,Geothlypis_formosa
+Geothlypis trichas,Common Yellowthroat,Passeriformes,Yes,2.79,134.19,21.03,0.14,Geothlypis_trichas
+Hirundo rustica,Barn Swallow,Passeriformes,Yes,2.39,113.94,-0.45,0.26,Hirundo_rustica
+Icteria virens,Yellow-breasted Chat,Passeriformes,Yes,1.79,123.59,16.39,0.61,Icteria_virens
+Icterus galbula,Baltimore Oriole,Passeriformes,Yes,1.58,120.87,15.3,0.68,Icterus_galbula
+Icterus spurius,Orchard Oriole,Passeriformes,Yes,1.89,116.16,13.36,0.22,Icterus_spurius
+Mniotilta varia,Black-and-white Warbler,Passeriformes,Yes,2.96,123.39,16.97,-0.46,Mniotilta_varia
+Myiarchus crinitus,Great Crested Flycatcher,Passeriformes,Yes,2.29,122.37,12.87,0.25,Myiarchus_crinitus
+Oreothlypis ruficapilla,Nashville Warbler,Passeriformes,Yes,2.01,121.09,21.85,0.02,Oreothlypis_ruficapilla
+Parkesia motacilla,Louisiana Waterthrush,Passeriformes,Yes,2.46,91.55,14.6,-1.79,Parkesia_motacilla
+Passerina caerulea,Blue Grosbeak,Passeriformes,Yes,2.05,114.07,18.27,-0.27,Passerina_caerulea
+Passerina cyanea,Indigo Bunting,Passeriformes,Yes,2.62,124.18,17.39,-0.14,Passerina_cyanea
+Petrochelidon pyrrhonota,Cliff Swallow,Passeriformes,Yes,1.71,118.87,-22.99,2.17,Petrochelidon_pyrrhonota
+Pheucticus ludovicianus,Rose-breasted Grosbeak,Passeriformes,Yes,1.57,118.53,11.49,0.72,Pheucticus_ludovicianus
+Pipilo erythrophthalmus,Eastern Towhee,Passeriformes,Yes,3.92,112.48,31.34,-2.6,Pipilo_erythrophthalmus
+Piranga olivacea,Scarlet Tanager,Passeriformes,Yes,2.15,119.42,-0.52,0.81,Piranga_olivacea
+Piranga rubra,Summer Tanager,Passeriformes,Yes,2.08,111.42,6.54,0.07,Piranga_rubra
+Polioptila caerulea,Blue-gray Gnatcatcher,Passeriformes,Yes,2.97,106.99,22.93,-1.7,Polioptila_caerulea
+Protonotaria citrea,Prothonotary Warbler,Passeriformes,Yes,2.57,107.72,13.25,-0.87,Protonotaria_citrea
+Sayornis phoebe,Eastern Phoebe,Passeriformes,Yes,3.03,94.74,26.99,-2.65,Sayornis_phoebe
+Seiurus aurocapilla,Ovenbird,Passeriformes,Yes,2.24,124.65,17.87,0.21,Seiurus_aurocapilla
+Setophaga americana,Northern Parula,Passeriformes,Yes,3.53,113.14,19.38,-1.68,Setophaga_americana
+Setophaga caerulescens,Black-throated Blue Warbler,Passeriformes,Yes,1.59,122.18,17.64,0.64,Setophaga_caerulescens
+Setophaga cerulea,Cerulean Warbler,Passeriformes,Yes,2.89,115.83,1.75,-0.16,Setophaga_cerulea
+Setophaga citrina,Hooded Warbler,Passeriformes,Yes,3,106.37,17.41,-1.52,Setophaga_citrina
+Setophaga discolor,Prairie Warbler,Passeriformes,Yes,2.72,108.82,20.19,-1.25,Setophaga_discolor
+Setophaga dominica,Yellow-throated Warbler,Passeriformes,Yes,2.55,93.27,20.08,-2.01,Setophaga_dominica
+Setophaga fusca,Blackburnian Warbler,Passeriformes,Yes,1.86,122.98,3.92,1.07,Setophaga_fusca
+Setophaga magnolia,Magnolia Warbler,Passeriformes,Yes,1.36,127.51,16.76,1.2,Setophaga_magnolia
+Setophaga pensylvanica,Chestnut-sided Warbler,Passeriformes,Yes,1.7,125.91,12.73,0.99,Setophaga_pensylvanica
+Setophaga petechia,Yellow Warbler,Passeriformes,Yes,1.94,127.95,9.3,1.04,Setophaga_petechia
+Setophaga pinus,Pine Warbler,Passeriformes,Yes,4.17,107.5,31.45,-3.11,Setophaga_pinus
+Setophaga ruticilla,American Redstart,Passeriformes,Yes,1.92,128.5,9.08,1.11,Setophaga_ruticilla
+Setophaga striata,Blackpoll Warbler,Passeriformes,Yes,1.65,135.06,1.66,2.06,Setophaga_striata
+Setophaga tigrina,Cape May Warbler,Passeriformes,Yes,1.62,123.15,14.62,0.81,Setophaga_tigrina
+Setophaga virens,Black-throated Green Warbler,Passeriformes,Yes,2.47,122,15.55,-0.04,Setophaga_virens
+Spizella passerina,Chipping Sparrow,Passeriformes,Yes,3.35,119.02,27.35,-1.53,Spizella_passerina
+Stelgidopteryx serripennis,Northern Rough-winged Swallow,Passeriformes,Yes,2.57,103.55,15.54,-1.22,Stelgidopteryx_serripennis
+Tachycineta bicolor,Tree Swallow,Passeriformes,Yes,3.47,107.82,22.62,-2.08,Tachycineta_bicolor
+Troglodytes aedon,House Wren,Passeriformes,Yes,2.01,120.14,28.43,-0.33,Troglodytes_aedon
+Tyrannus tyrannus,Eastern Kingbird,Passeriformes,Yes,2.42,124.84,-12.23,1.41,Tyrannus_tyrannus
+Vermivora cyanoptera,Blue-winged Warbler,Passeriformes,Yes,2.56,107.59,17.4,-1.05,Vermivora_cyanoptera
+Vireo flavifrons,Yellow-throated Vireo,Passeriformes,Yes,3.39,111.68,13.08,-1.35,Vireo_flavifrons
+Vireo gilvus,Warbling Vireo,Passeriformes,Yes,1.76,120.1,18.98,0.31,Vireo_gilvus
+Vireo griseus,White-eyed Vireo,Passeriformes,Yes,3.19,109.95,19.22,-1.55,Vireo_griseus
+Vireo olivaceus,Red-eyed Vireo,Passeriformes,Yes,3.1,127.4,-7.13,0.73,Vireo_olivaceus
+Vireo solitarius,Blue-headed Vireo,Passeriformes,Yes,2.71,121.65,25.82,-0.74,Vireo_solitarius
+Coccyzus erythropthalmus,Black-billed Cuckoo,Cuculiformes,No,NA,NA,NA,NA,Coccyzus_erythropthalmus
+Antrostomus carolinensis,Chuck-will's-widow,Caprimulgiformes,No,NA,NA,NA,NA,Antrostomus_carolinensis
+Antrostomus vociferus,Eastern Whip-poor-will,Caprimulgiformes,No,NA,NA,NA,NA,Antrostomus_vociferus
+Elanoides forficatus,Swallow-tailed Kite,Accipitriformes,No,NA,NA,NA,NA,Elanoides_forficatus
+Ictinia mississippiensis,Mississippi Kite,Accipitriformes,No,NA,NA,NA,NA,Ictinia_mississippiensis
+Sphyrapicus varius,Yellow-bellied Sapsucker,Piciformes,No,NA,NA,NA,NA,Sphyrapicus_varius
+Contopus cooperi,Olive-sided Flycatcher,Passeriformes,No,NA,NA,NA,NA,Contopus_cooperi
+Empidonax flaviventris,Yellow-bellied Flycatcher,Passeriformes,No,NA,NA,NA,NA,Empidonax_flaviventris
+Empidonax alnorum,Alder Flycatcher,Passeriformes,No,NA,NA,NA,NA,Empidonax_alnorum
+Lanius ludovicianus,Loggerhead Shrike,Passeriformes,No,NA,NA,NA,NA,Lanius_ludovicianus
+Vireo bellii,Bell's Vireo,Passeriformes,No,NA,NA,NA,NA,Vireo_bellii
+Vireo philadelphicus,Philadelphia Vireo,Passeriformes,No,NA,NA,NA,NA,Vireo_philadelphicus
+Cyanocitta cristata,Blue Jay,Passeriformes,No,NA,NA,NA,NA,Cyanocitta_cristata
+Corvus ossifragus,Fish Crow,Passeriformes,No,NA,NA,NA,NA,Corvus_ossifragus
+Progne subis,Purple Martin,Passeriformes,No,NA,NA,NA,NA,Progne_subis
+Riparia riparia,Bank Swallow,Passeriformes,No,NA,NA,NA,NA,Riparia_riparia
+Troglodytes hiemalis,Winter Wren,Passeriformes,No,NA,NA,NA,NA,Troglodytes_hiemalis
+Cistothorus palustris,Marsh Wren,Passeriformes,No,NA,NA,NA,NA,Cistothorus_palustris
+Regulus satrapa,Golden-crowned Kinglet,Passeriformes,No,NA,NA,NA,NA,Regulus_satrapa
+Regulus calendula,Ruby-crowned Kinglet,Passeriformes,No,NA,NA,NA,NA,Regulus_calendula
+Sialia sialis,Eastern Bluebird,Passeriformes,No,NA,NA,NA,NA,Sialia_sialis
+Catharus minimus,Gray-cheeked Thrush,Passeriformes,No,NA,NA,NA,NA,Catharus_minimus
+Catharus bicknelli,Bicknell's Thrush,Passeriformes,No,NA,NA,NA,NA,Catharus_bicknelli
+Catharus ustulatus,Swainson's Thrush,Passeriformes,No,NA,NA,NA,NA,Catharus_ustulatus
+Catharus guttatus,Hermit Thrush,Passeriformes,No,NA,NA,NA,NA,Catharus_guttatus
+Turdus migratorius,American Robin,Passeriformes,No,NA,NA,NA,NA,Turdus_migratorius
+Mimus polyglottos,Northern Mockingbird,Passeriformes,No,NA,NA,NA,NA,Mimus_polyglottos
+Bombycilla cedrorum,Cedar Waxwing,Passeriformes,No,NA,NA,NA,NA,Bombycilla_cedrorum
+Spinus tristis,American Goldfinch,Passeriformes,No,NA,NA,NA,NA,Spinus_tristis
+Peucaea aestivalis,Bachman's Sparrow,Passeriformes,No,NA,NA,NA,NA,Peucaea_aestivalis
+Spizelloides arborea,American Tree Sparrow,Passeriformes,No,NA,NA,NA,NA,Spizelloides_arborea
+Passerella iliaca,Fox Sparrow,Passeriformes,No,NA,NA,NA,NA,Passerella_iliaca
+Junco hyemalis,Dark-eyed Junco,Passeriformes,No,NA,NA,NA,NA,Junco_hyemalis
+Zonotrichia leucophrys,White-crowned Sparrow,Passeriformes,No,NA,NA,NA,NA,Zonotrichia_leucophrys
+Zonotrichia albicollis,White-throated Sparrow,Passeriformes,No,NA,NA,NA,NA,Zonotrichia_albicollis
+Pooecetes gramineus,Vesper Sparrow,Passeriformes,No,NA,NA,NA,NA,Pooecetes_gramineus
+Passerculus sandwichensis,Savannah Sparrow,Passeriformes,No,NA,NA,NA,NA,Passerculus_sandwichensis
+Melospiza lincolnii,Lincoln's Sparrow,Passeriformes,No,NA,NA,NA,NA,Melospiza_lincolnii
+Melospiza georgiana,Swamp Sparrow,Passeriformes,No,NA,NA,NA,NA,Melospiza_georgiana
+Sturnella magna,Eastern Meadowlark,Passeriformes,No,NA,NA,NA,NA,Sturnella_magna
+Agelaius phoeniceus,Red-winged Blackbird,Passeriformes,No,NA,NA,NA,NA,Agelaius_phoeniceus
+Euphagus carolinus,Rusty Blackbird,Passeriformes,No,NA,NA,NA,NA,Euphagus_carolinus
+Quiscalus quiscula,Common Grackle,Passeriformes,No,NA,NA,NA,NA,Quiscalus_quiscula
+Parkesia noveboracensis,Northern Waterthrush,Passeriformes,No,NA,NA,NA,NA,Parkesia_noveboracensis
+Vermivora chrysoptera,Golden-winged Warbler,Passeriformes,No,NA,NA,NA,NA,Vermivora_chrysoptera
+Limnothlypis swainsonii,Swainson's Warbler,Passeriformes,No,NA,NA,NA,NA,Limnothlypis_swainsonii
+Oreothlypis peregrina,Tennessee Warbler,Passeriformes,No,NA,NA,NA,NA,Oreothlypis_peregrina
+Oreothlypis celata,Orange-crowned Warbler,Passeriformes,No,NA,NA,NA,NA,Oreothlypis_celata
+Oporornis agilis,Connecticut Warbler,Passeriformes,No,NA,NA,NA,NA,Oporornis_agilis
+Geothlypis philadelphia,Mourning Warbler,Passeriformes,No,NA,NA,NA,NA,Geothlypis_philadelphia
+Setophaga castanea,Bay-breasted Warbler,Passeriformes,No,NA,NA,NA,NA,Setophaga_castanea
+Setophaga palmarum,Palm Warbler,Passeriformes,No,NA,NA,NA,NA,Setophaga_palmarum
+Setophaga coronata,Yellow-rumped Warbler,Passeriformes,No,NA,NA,NA,NA,Setophaga_coronata
+Cardellina canadensis,Canada Warbler,Passeriformes,No,NA,NA,NA,NA,Cardellina_canadensis
+Cardellina pusilla,Wilson's Warbler,Passeriformes,No,NA,NA,NA,NA,Cardellina_pusilla
+Spiza americana,Dickcissel,Passeriformes,No,NA,NA,NA,NA,Spiza_americana
+Ammospiza nelsoni,Nelson's Sparrow,Passeriformes,No,NA,NA,NA,NA,Ammospiza_nelsoni
+Ammospiza caudacuta,Saltmarsh Sparrow,Passeriformes,No,NA,NA,NA,NA,Ammospiza_caudacuta

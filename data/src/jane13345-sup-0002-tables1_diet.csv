@@ -1,0 +1,242 @@
+﻿Species,Common name,Diet,Flyway,S
+Acanthis_flammea,Common Redpoll,Herbivore-Granivore,e,1
+Actitis_macularius,Spotted Sandpiper,Insectivore,a,1
+Aechmophorus_occidentalis,Western Grebe,Piscivore,w,0
+Ammodramus_savannarum,Grasshopper Sparrow,Insectivore,a,1
+Ammospiza_caudacuta,Saltmarsh Sparrow,Insectivore,e,1
+Ammospiza_leconteii,Le Conte's Sparrow,Granivore,c,1
+Ammospiza_nelsoni,Nelson's Sparrow,Omnivore,e,1
+Anas_acuta,Northern Pintail,Herbivore-Granivore,a,1
+Anas_crecca,Green-winged Teal,Herbivore-Granivore,a,1
+Anas_platyrhynchos,Mallard,Omnivore,a,1
+Anas_rubripes,American Black Duck,Herbivore-Granivore,e,1
+Anser_albifrons,Greater White-fronted Goose,Herbivore,a,1
+Anser_caerulescens,Snow Goose,Herbivore,a,1
+Anser_rossii,Ross's Goose,Herbivore,a,1
+Anthus_rubescens,American Pipit,Insectivore,a,1
+Anthus_spragueii,Sprague's Pipit,Insectivore,c,1
+Antigone_canadensis,Sandhill Crane,Omnivore,a,1
+Antrostomus_carolinensis,Chuck-will s-widow,Insectivore,e,1
+Antrostomus_vociferus,Eastern Whip-poor-will,Insectivore,e,1
+Aquila_chrysaetos,Golden Eagle,Carnivore,w,1
+Archilochus_alexandri,Black-chinned Hummingbird,Nectarivore,w,1
+Archilochus_colubris,Ruby-throated Hummingbird,Nectarivore,e,1
+Artemisiospiza_nevadensis,Sagebrush Sparrow,Insectivore,w,1
+Asio_flammeus,Short-eared Owl,Carnivore,a,1
+Aythya_affinis,Lesser Scaup,Herbivore-Granivore,a,1
+Aythya_americana,Redhead,Herbivore,a,1
+Aythya_collaris,Ring-necked Duck,Herbivore,a,1
+Aythya_valisineria,Canvasback,Herbivore,a,1
+Bartramia_longicauda,Upland Sandpiper,Insectivore,c,1
+Bombycilla_cedrorum,Cedar Waxwing,Frugivore,a,0
+Bombycilla_garrulus,Bohemian Waxwing,Omnivore,e,1
+Botaurus_lentiginosus,American Bittern,Piscivore,e,0
+Branta_canadensis,Canada Goose,Herbivore,a,1
+Branta_hutchinsii,Cackling Goose,Herbivore,a,1
+Bucephala_albeola,Bufflehead,Insectivore,a,1
+Buteo_lagopus,Rough-legged Hawk,Carnivore,a,1
+Buteo_platypterus,Broad-winged Hawk,Carnivore,e,1
+Buteo_regalis,Ferruginous Hawk,Carnivore,w,1
+Buteo_swainsoni,Swainson's Hawk,Carnivore,w,1
+Calamospiza_melanocorys,Lark Bunting,Granivore,w,1
+Calcarius_lapponicus,Lapland Longspur,Omnivore,a,1
+Calcarius_ornatus,Chestnut-collared Longspur,Granivore,w,1
+Calcarius_pictus,Smith's Longspur,Omnivore,c,1
+Calidris_bairdii,Baird's Sandpiper,Insectivore,a,1
+Calidris_fuscicollis,White-rumped Sandpiper,Insectivore,e,1
+Calidris_himantopus,Stilt Sandpiper,Insectivore,a,1
+Calidris_mauri,Western Sandpiper,Insectivore,w,1
+Calidris_melanotos,Pectoral Sandpiper,Insectivore,e,1
+Calidris_minutilla,Least Sandpiper,Insectivore,a,1
+Calidris_pusilla,Semipalmated Sandpiper,Insectivore,e,1
+Calidris_subruficollis,Buff-breasted Sandpiper,Insectivore,e,1
+Cardellina_canadensis,Canada Warbler,Insectivore,e,1
+Cardellina_pusilla,Wilson's Warbler,Insectivore,a,1
+Cardellina_rubrifrons,Red-faced Warbler,Insectivore,w,1
+Catharus_fuscescens    ,Veery,Insectivore,NA,NA
+Catharus_guttatus,Hermit Thrush,Insectivore,e,1
+Catharus_minimus,Gray-cheeked Thrush,Insectivore,e,1
+Catharus_ustulatus,Swainson's Thrush,Insectivore,e,1
+Centronyx_bairdii,Baird's Sparrow,Omnivore,w,1
+Centronyx_henslowii,Henslow's Sparrow,Insectivore,e,1
+Charadrius_melodus,Piping Plover,Insectivore,e,1
+Charadrius_montanus,Mountain Plover,Insectivore,w,1
+Charadrius_semipalmatus,Semipalmated Plover,Insectivore,e,1
+Charadrius_vociferus,Killdeer,Insectivore,a,1
+Chondestes_grammacus,Lark Sparrow,Granivore,w,1
+Chordeiles_minor,Common Nighthawk,Insectivore,a,1
+Circus_hudsonius,Northern Harrier,Carnivore,a,1
+Cistothorus_palustris,Marsh Wren,Insectivore,a,1
+Coccyzus_americanus,Yellow-billed Cuckoo,Insectivore,e,1
+Colaptes_auratus,Northern Flicker,Insectivore,a,1
+Contopus_cooperi,Olive-sided Flycatcher,Insectivore,a,1
+Contopus_sordidulus,Western Wood-Pewee,Insectivore,w,1
+Contopus_virens,Eastern Wood-Pewee,Insectivore,e,1
+Cygnus_columbianus,Tundra Swan,Herbivore,e,1
+Cypseloides_niger,Black Swift,Insectivore,w,1
+Dolichonyx_oryzivorus,Bobolink,Insectivore,e,1
+Dumetella_carolinensis,Gray Catbird,Insectivore,e,1
+Empidonax_alnorum,Alder Flycatcher,Insectivore,e,1
+Empidonax_difficilis,Pacific-slope Flycatcher,Insectivore,w,1
+Empidonax_flaviventris,Yellow-bellied Flycatcher,Insectivore,e,1
+Empidonax_hammondii,Hammond's Flycatcher,Insectivore,w,1
+Empidonax_minimus,Least Flycatcher,Insectivore,e,1
+Empidonax_oberholseri,Dusky Flycatcher,Insectivore,w,1
+Empidonax_occidentalis,Cordilleran Flycatcher,Insectivore,w,1
+Empidonax_traillii,Willow Flycatcher,Insectivore,a,1
+Empidonax_virescens,Acadian Flycatcher,Insectivore,e,1
+Empidonax_wrightii,Gray Flycatcher,Insectivore,w,1
+Euphagus_carolinus,Rusty Blackbird,Insectivore,e,1
+Euphagus_cyanocephalus,Brewer's Blackbird,Insectivore,w,1
+Falco_columbarius,Merlin,Carnivore,a,1
+Falco_peregrinus,Peregrine Falcon,Carnivore,a,1
+Gallinago_delicata,Wilson's Snipe,Insectivore,a,1
+Geothlypis_formosa,Kentucky Warbler,Insectivore,e,1
+Geothlypis_philadelphia,Mourning Warbler,Insectivore,e,1
+Geothlypis_tolmiei,MacGillivray's Warbler,Insectivore,w,1
+Geothlypis_trichas,Common Yellowthroat,Insectivore,e,1
+Grus_americana,Whooping Crane,Carnivore,e,1
+Haemorhous_purpureus,Purple Finch,Herbivore-Granivore,e,1
+Helmitheros_vermivorum,Worm-eating Warbler,Insectivore,e,1
+Hirundo_rustica,Barn Swallow,Insectivore,a,1
+Hylocichla_mustelina,Wood Thrush,Insectivore,e,1
+Icteria_virens,Yellow-breasted Chat,Insectivore,a,1
+Icterus_bullockii,Bullock's Oriole,Insectivore,w,1
+Icterus_cucullatus,Hooded Oriole,Omnivore,w,1
+Icterus_galbula,Baltimore Oriole,Insectivore,e,1
+Icterus_parisorum,Scott's Oriole,Insectivore,w,1
+Icterus_spurius,Orchard Oriole,Omnivore,e,1
+Ictinia_mississippiensis,Mississippi Kite,Insectivore,c,1
+Ixoreus_naevius,Varied Thrush,Frugivore,w,0
+Junco_hyemalis,Dark-eyed Junco,Granivore,a,1
+Lanius_borealis,Northern Shrike,Carnivore,a,1
+Limnodromus_griseus,Short-billed Dowitcher,Insectivore,e,1
+Limnodromus_scolopaceus,Long-billed Dowitcher,Insectivore,a,1
+Limnothlypis_swainsonii,Swainson's Warbler,Insectivore,e,1
+Limosa_fedoa,Marbled Godwit,Insectivore,a,1
+Limosa_haemastica,Hudsonian Godwit,Insectivore,c,1
+Lophodytes_cucullatus,Hooded Merganser,Omnivore,e,1
+Mareca_americana,American Wigeon,Herbivore,a,1
+Mareca_strepera,Gadwall,Herbivore,a,1
+Megaceryle_alcyon,Belted Kingfisher,Piscivore,a,0
+Melospiza_georgiana,Swamp Sparrow,Omnivore,e,1
+Melospiza_lincolnii,Lincoln's Sparrow,Omnivore,a,1
+Mniotilta_varia,Black-and-white Warbler,Insectivore,e,1
+Molothrus_ater,Brown-headed Cowbird,Granivore,a,1
+Myiarchus_cinerascens,Ash-throated Flycatcher,Insectivore,w,1
+Myiarchus_crinitus,Great Crested Flycatcher,Insectivore,e,1
+Numenius_americanus,Long-billed Curlew,Insectivore,w,1
+Oreoscoptes_montanus,Sage Thrasher,Insectivore,w,1
+Oreothlypis_celata,Orange-crowned Warbler,Insectivore,a,1
+Oreothlypis_luciae,Lucy's Warbler,Insectivore,w,1
+Oreothlypis_peregrina,Tennessee Warbler,Insectivore,e,1
+Oreothlypis_ruficapilla,Nashville Warbler,Insectivore,e,1
+Oreothlypis_virginiae,Virginia's Warbler,Insectivore,w,1
+Oxyura_jamaicensis,Ruddy Duck,Insectivore,a,1
+Pandion_haliaetus,Osprey,Piscivore,e,0
+Parkesia_motacilla,Louisiana Waterthrush,Insectivore,e,1
+Parkesia_noveboracensis,Northern Waterthrush,Insectivore,e,1
+Passerculus_sandwichensis,Savannah Sparrow,Omnivore,a,1
+Passerella_iliaca,Fox Sparrow,Omnivore,e,1
+Passerina_amoena,Lazuli Bunting,Omnivore,w,1
+Passerina_caerulea,Blue Grosbeak,Omnivore,a,1
+Passerina_ciris,Painted Bunting,Granivore,c,1
+Passerina_cyanea,Indigo Bunting,Granivore,e,1
+Pelecanus_erythrorhynchos,American White Pelican,Piscivore,a,0
+Petrochelidon_pyrrhonota,Cliff Swallow,Insectivore,a,1
+Phalaenoptilus_nuttallii,Common Poorwill,Insectivore,w,1
+Pheucticus_ludovicianus,Rose-breasted Grosbeak,Omnivore,e,1
+Pheucticus_melanocephalus,Black-headed Grosbeak,Insectivore,w,1
+Pipilo_chlorurus,Green-tailed Towhee,Omnivore,w,1
+Pipilo_erythrophthalmus,Eastern Towhee,Omnivore,NA,NA
+Piranga_ludoviciana,Western Tanager,Insectivore,w,1
+Piranga_olivacea,Scarlet Tanager,Insectivore,e,1
+Piranga_rubra,Summer Tanager,Insectivore,e,1
+Plectrophenax_nivalis,Snow Bunting,Herbivore,e,1
+Pluvialis_dominica,American Golden-Plover,Insectivore,e,1
+Pluvialis_fulva,Pacific Golden-Plover,Insectivore,w,1
+Polioptila_caerulea,Blue-gray Gnatcatcher,Insectivore,e,1
+Pooecetes_gramineus,Vesper Sparrow,Omnivore,a,1
+Porzana_carolina,Sora,Herbivore-Granivore,a,1
+Progne_subis,Purple Martin,Insectivore,e,1
+Protonotaria_citrea,Prothonotary Warbler,Insectivore,e,1
+Quiscalus_quiscula,Common Grackle,Omnivore,e,1
+Rallus_limicola,Virginia Rail,Omnivore,a,1
+Recurvirostra_americana,American Avocet,Insectivore,w,1
+Regulus_calendula,Ruby-crowned Kinglet,Insectivore,a,1
+Regulus_satrapa,Golden-crowned Kinglet,Insectivore,e,1
+Rhynchophanes_mccownii,McCown's Longspur,Granivore,w,1
+Riparia_riparia,Bank Swallow,Insectivore,a,1
+Sayornis_phoebe,Eastern Phoebe,Insectivore,e,1
+Sayornis_saya,Say's Phoebe,Insectivore,w,1
+Scolopax_minor,American Woodcock,Insectivore,e,1
+Seiurus_aurocapilla,Ovenbird,Insectivore,e,1
+Selasphorus_calliope,Calliope Hummingbird,Nectarivore,w,1
+Selasphorus_platycercus,Broad-tailed Hummingbird,Nectarivore,w,1
+Selasphorus_rufus,Rufous Hummingbird,Nectarivore,w,1
+Selasphorus_sasin,Allen's Hummingbird,Nectarivore,w,1
+Setophaga_americana,Northern Parula,Insectivore,e,1
+Setophaga_caerulescens,Black-throated Blue Warbler,Insectivore,e,1
+Setophaga_castanea,Bay-breasted Warbler,Insectivore,e,1
+Setophaga_cerulea,Cerulean Warbler,Insectivore,e,1
+Setophaga_citrina,Hooded Warbler,Insectivore,e,1
+Setophaga_coronata,Yellow-rumped Warbler,Insectivore,a,1
+Setophaga_discolor,Prairie Warbler,Insectivore,e,1
+Setophaga_dominica,Yellow-throated Warbler,Insectivore,e,1
+Setophaga_fusca,Blackburnian Warbler,Insectivore,e,1
+Setophaga_magnolia,Magnolia Warbler,Insectivore,e,1
+Setophaga_nigrescens,Black-throated Gray Warbler,Insectivore,w,1
+Setophaga_occidentalis,Hermit Warbler,Insectivore,w,1
+Setophaga_palmarum,Palm Warbler,Insectivore,e,1
+Setophaga_pensylvanica,Chestnut-sided Warbler,Insectivore,e,1
+Setophaga_petechia,Yellow Warbler,Insectivore,a,1
+Setophaga_pinus,Pine Warbler,Insectivore,e,1
+Setophaga_ruticilla,American Redstart,Insectivore,e,1
+Setophaga_striata,Blackpoll Warbler,Insectivore,e,1
+Setophaga_tigrina,Cape May Warbler,Insectivore,e,1
+Setophaga_townsendi,Townsend's Warbler,Insectivore,w,1
+Setophaga_virens,Black-throated Green Warbler,Insectivore,e,1
+Sialia_currucoides,Mountain Bluebird,Insectivore,w,1
+Spatula_clypeata,Northern Shoveler,Insectivore,a,1
+Spatula_discors,Blue-winged Teal,Herbivore,a,1
+Sphyrapicus_nuchalis,Red-naped Sapsucker,Omnivore,w,1
+Sphyrapicus_thyroideus,Williamson's Sapsucker,Omnivore,w,1
+Sphyrapicus_varius,Yellow-bellied Sapsucker,Omnivore,e,1
+Spinus_lawrencei,Lawrence's Goldfinch,Granivore,w,1
+Spiza_americana,Dickcissel,Granivore,c,1
+Spizella_breweri,Brewer's Sparrow,Omnivore,w,1
+Spizella_pallida,Clay-colored Sparrow,Granivore,a,1
+Spizella_passerina,Chipping Sparrow,Granivore,a,1
+Spizelloides_arborea,American Tree Sparrow,Omnivore,e,1
+Stelgidopteryx_serripennis,Northern Rough-winged Swallow,Insectivore,a,1
+Sturnella_neglecta,Western Meadowlark,Omnivore,w,1
+Tachycineta_bicolor,Tree Swallow,Insectivore,a,1
+Tachycineta_thalassina,Violet-green Swallow,Insectivore,w,1
+Toxostoma_rufum,Brown Thrasher,Omnivore,e,1
+Tringa_flavipes,Lesser Yellowlegs,Insectivore,a,1
+Tringa_melanoleuca,Greater Yellowlegs,Insectivore,a,1
+Tringa_semipalmata,Willet,Insectivore,a,1
+Tringa_solitaria,Solitary Sandpiper,Insectivore,e,1
+Troglodytes_aedon      ,House wren,Insectivore,NA,NA
+Troglodytes_hiemalis,Winter Wren,Insectivore,e,1
+Tyrannus_forficatus,Scissor-tailed Flycatcher,Insectivore,c,1
+Tyrannus_tyrannus,Eastern Kingbird,Insectivore,a,1
+Tyrannus_verticalis,Western Kingbird,Insectivore,w,1
+Vermivora_chrysoptera,Golden-winged Warbler,Insectivore,e,1
+Vermivora_cyanoptera,Blue-winged Warbler,Insectivore,e,1
+Vireo_atricapilla,Black-capped Vireo,Insectivore,c,1
+Vireo_bellii,Bell's Vireo,Insectivore,c,1
+Vireo_cassinii,Cassin's Vireo,Insectivore,w,1
+Vireo_flavifrons,Yellow-throated Vireo,Insectivore,e,1
+Vireo_gilvus,Warbling Vireo,Insectivore,a,1
+Vireo_griseus,White-eyed Vireo,Insectivore,e,1
+Vireo_olivaceus        ,Red-eyed Vireo,Insectivore,NA,NA
+Vireo_philadelphicus,Philadelphia Vireo,Insectivore,e,1
+Vireo_plumbeus,Plumbeous Vireo,Insectivore,w,1
+Vireo_solitarius,Blue-headed Vireo,Insectivore,e,1
+Vireo_vicinior,Gray Vireo,Insectivore,w,1
+Xanthocephalus_xanthocephalus,Yellow-headed Blackbird,Insectivore,w,1
+Zonotrichia_albicollis,White-throated Sparrow,Herbivore-Granivore,e,1
+Zonotrichia_atricapilla,Golden-crowned Sparrow,Granivore,w,1
+Zonotrichia_leucophrys,White-crowned Sparrow,Granivore,a,1
+Zonotrichia_querula,Harris's Sparrow,Granivore,c,1
