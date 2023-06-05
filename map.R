@@ -36,7 +36,7 @@ pp <- ggplot(data = worldmap, aes(x = long, y = lat,
             xlim = c(-110, -50), ylim = c(21, 66)) +
   #theme_bw() +
   theme(panel.grid.major = element_line(color = alpha('black', 0.2),
-                                        size = 0.5),
+                                        linewidth = 0.5),
         panel.ontop = TRUE,
         panel.background = element_rect(fill = NA),
         legend.title=element_text(size=13),
@@ -69,7 +69,7 @@ load("~/Library/Mobile Documents/com~apple~CloudDocs/MigratorySensitivity//Data/
 # all species
 sensim_df <- readRDS('~/Library/Mobile Documents/com~apple~CloudDocs/MigratorySensitivity//Data/fit_df_tab5.rds')
 qq <- ggplot(sensim_df, aes(lat, sensim, group = species)) +
-  geom_line(size = 1, col = "gray") +
+  geom_line(linewidth = 1, col = "gray") +
   theme_classic() +
   xlab("Latitude (Degrees)") +
   ylab("Sensitivity (Days / Day)") +
@@ -83,7 +83,7 @@ doline <- function(species){
   sensim_df_f <- sensim_df[which(sensim_df$species == species),]
   qq + geom_line(data = sensim_df_f, 
                  #alpha = 0.8,
-                 size = 1.1,
+                 linewidth = 1.1,
                  color = 'black')
 }
 
