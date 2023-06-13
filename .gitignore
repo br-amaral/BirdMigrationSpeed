@@ -17,3 +17,5 @@ Presentations/
 .txt
 .DS_Store
 figures/
+.Rhistory
+.DS_Store
