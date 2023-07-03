@@ -103,7 +103,7 @@ for_gr2 <- left_join(for_gr, cellnumbs, by = "cell") %>%
   rename(cell = cell2)
 
 #merge hex spatial data with HM data
-ran_sp <- left_join(ran_sp, cell_grid_tab4, by = 'cell')%>%  
+ran_sp <- left_join(ran_sp, cell_grid_tab4, by = 'cell', relationship = "many-to-many") %>%  
   transmute(species,
             cell,
             cell_lat,cell_lng,
