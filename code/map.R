@@ -133,3 +133,4 @@ rrb <- pp +
             aes(x = long,y = lat, group = cell),
             inherit.aes = FALSE,
             color = 'black', alpha = 0.2) 
+
