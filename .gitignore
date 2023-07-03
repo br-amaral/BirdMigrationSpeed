@@ -18,7 +18,7 @@ Presentations/
 .DS_Store
 figures/
 .Rhistory
-.DS_Store
+data/.DS_Store
 writing/
 presentations
 .Rhistory
