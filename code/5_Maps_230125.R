@@ -12,10 +12,10 @@ library(viridis)
 library(scales) # histogram
 
 # load data and source 'base' maps ----------------------
-source("~/Library/Mobile Documents/com~apple~CloudDocs/BirdMigrationSpeed/map.R")
+source("code/map.R")
 rm(list= ls()[!(ls() %in% c('rr', 'rrb', 'pp'))])
 
-load("~/Library/Mobile Documents/com~apple~CloudDocs/MigratorySensitivity/Data/species_Grid.RData")
+load("data/species_Grid.RData")
 
 final2 <- readRDS("~/OneDrive/BirdMigrationSpeed_copy/final.rds") %>% 
   mutate(species = as.factor(species), 
