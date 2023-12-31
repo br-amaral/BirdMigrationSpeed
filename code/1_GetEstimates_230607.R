@@ -259,7 +259,6 @@ for(i in 1:nrow(predsG)){
 } 
 
 # join green up and bird velocity data -----------------
-# merge green up and bird velocity data
 all <- base::merge(bird, greenup[ ,c("year","cell","gr_mn","gr_ncell")], all.x = TRUE)
 velocityB <- velocityB %>% 
   mutate(cell = as.integer(cell)) %>% 
@@ -283,13 +282,13 @@ all <- all %>%
 
 for(i in 1:nrow(all)){
   if(!is.na(all$vArrMag[i])) {
-    if(all$vArrMag[i] > 10000) {all$vArrMag[i] <- NA}
+    if(all$vArrMag[i] > 3000) {all$vArrMag[i] <- NA}
   }
 }
 
 for(i in 1:nrow(all)){
   if(!is.na(all$vGrMag[i])) {
-    if(all$vGrMag[i] > 10000) {all$vGrMag[i] <- NA}
+    if(all$vGrMag[i] > 3000) {all$vGrMag[i] <- NA}
   }
 }
 cellspec <- unique(all[ ,c("cell","species")])
@@ -323,5 +322,57 @@ saveRDS(final2, file = "data/birdgreen.rds")
 saveRDS(cells %>% dplyr::select(cell, cell_lat, cell_lng), file = "data/cellcoor.rds")
 saveRDS(cellnumbs, file = "data/cellnumbs.rds")
 saveRDS(cells, file = "data/cellnei.rds")
+
+## example plot for supplementary materials fig X
+cells_ex <- cells %>% filter(cell %in% c(6,7,14,15,16,23,24))
+arr_GAM_mean <- c(17,20,14,13,13,11,9)
+dat.lm <- cells_ex %>% 
+  mutate(arr_GAM_mean = arr_GAM_mean) %>% 
+  filter(cell != 15)
+
+xy <- latlong2grid(dat.lm[3:2])  # cel positions
+colnames(xy) <- c('x','y')
+coef <- lm(data = dat.lm, formula = arr_GAM_mean ~ xy$x + xy$y)$coef[2:3]
+angle <- rad2deg(atan2(coef[1],coef[2]))
+if(angle < 0) {angle = angle + 360}
+velocityB <- matrix(c(as.numeric(cells_ex[4,1]),
+                      sum(!is.na(dat.lm$arr_GAM_mean)),
+                      as.numeric(sqrt((1/coef[1])^2+(1/coef[2])^2)),
+                      as.numeric(angle)), ncol = 4, nrow = 1)
+colnames(velocityB) <- c("cell", "N", "vArrMag", "vArrAng")
+
+
+velocityB <- data.frame(species = "a", 
+                        year = "b",
+                        cell = velocityB[,1],
+                        NArr = as.numeric(velocityB[,2]),
+                        vArrMag = as.numeric(velocityB[,3]),  # magnitude
+                        vArrAng = as.numeric(velocityB[,4]))  # angle
+
+velocityB$cell <- as.numeric(velocityB$cell)
+
+preds <- left_join(velocityB, cells[,1:3], by= "cell")
+preds$ang <- NA
+for(i in 1:nrow(preds)){
+  if(!is.na(preds$vArrAng[i]) & (360 - preds$vArrAng[i] + 90)>360) 
+  {preds$ang[i] = (360 - preds$vArrAng[i] + 90 - 360)}
+  if(!is.na(preds$vArrAng[i]) & (360 - preds$vArrAng[i] + 90)<360) 
+  {preds$ang[i] = (360 - preds$vArrAng[i] + 90)}
+}
+
+preds2 <- preds %>% 
+  #  filter(vArrMag < 10000) %>% 
+  mutate(
+    # x = (cell_lng + 10) * cos(ang * pi / 180),
+    # y = (cell_lat + 10) * sin(ang * pi / 180)
+    x = cell_lng + log((vArrMag)) * cos(ang * pi / 180),
+    y = cell_lat + log((vArrMag)) * sin(ang * pi / 180)
+  )
+
+preds2
+
+
+
+
 
 
