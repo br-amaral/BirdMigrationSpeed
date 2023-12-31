@@ -409,11 +409,6 @@ mod_tra <-
 summary(mod_tra)
 
 ## Figure 4 - smooth for traits effects ------------------------------------------------------------------------
-### Sensitivity ---------------------------------------------------------------------------------------------------------
-plot_smooth(mod_tra, view = "xi_mean", transform = "exp", log = "y",
-            xlab = "Sensitivity", ylab = "Bird migratory speed (km/day, log-scale)",
-            plot_all='Group',
-            col = "#009E73", rug = F, lwd = 3)
 
 ### First arrival date ---------------------------------------------------------------------------------------------------------
 svglite::svglite(glue("figures/Fig5/fig5a.svg"), 
@@ -424,33 +419,6 @@ plot_smooth(mod_tra5, view = "ea_lat", transform = "exp", log = "y",
             ylim = exp(c(2, 6))
             )
 dev.off()
-
-### Body mass (grams) ---------------------------------------------------------------------------------------------------------
-svglite::svglite(glue("figures/Fig5/fig5b.svg"), 
-                 width = 4, height = 3.8)
-plot_smooth(mod_tra3, view = "Body_mass_g", transform = "exp", log = "y",
-            xlab = "Body mass (grams)", ylab = "Bird migratory speed (km/day, log-scale)",
-            col = "#009E73", rug = F, lwd = 3)
-dev.off()
-
-### Overwintering latitude ---------------------------------------------------------------------------------------------------------
-svglite::svglite(glue("figures/Fig5/fig5c.svg"), 
-                 width = 4, height = 3.8)
-plot_smooth(mod_tra3, view = "winlat", transform = "exp", log = "y",
-            plot_all = c("xi_mean","ea_lat","Diet","Body_mass_g","winlat","Time","HWI"),
-            xlab = "Overwintering latitude", ylab = "Bird migratory speed (km/day, log-scale)",
-            col = "#CC79A7", rug = F, lwd = 3, ylim = exp(c(2, 6))
-)
-dev.off()
-
-### Hand-wing index (HWI) ---------------------------------------------------------------------------------------------------------
-svglite::svglite(glue("figures/Fig5/fig5d.svg"), 
-                 width = 4, height = 3.8)
-plot_smooth(mod_tra3, view = "HWI", transform = "exp", log = "y",
-            xlab = "Hand-wing index (HWI)", ylab = "Bird migratory speed (km/day, log-scale)",
-            col = "#CC79A7", rug = F, lwd = 3)
-dev.off()
-## Check correlation between predictors
 
 ### Diet ---------------------------------------------------------------------------------------------------------
 newdata_d <- data.frame(xi_mean = rep(mean(final4$xi_mean, na.rm = T),4),
@@ -508,6 +476,38 @@ ggplot(aes(x = diet, y = mean), data = tra_efftab) +
                      #breaks = log(c(25, 50, 100, 150)), labels = c(25, 50, 100, 150)) +
                      breaks = log(c(10,25, 50, 100, 250)), labels = c(10, 25, 50, 100, 250)) +
   labs(y = "Bird speed (km/day, log scale)")
+
+### Sensitivity ---------------------------------------------------------------------------------------------------------
+plot_smooth(mod_tra, view = "xi_mean", transform = "exp", log = "y",
+            xlab = "Sensitivity", ylab = "Bird migratory speed (km/day, log-scale)",
+            plot_all='Group',
+            col = "#009E73", rug = F, lwd = 3)
+
+### Body mass (grams) ---------------------------------------------------------------------------------------------------------
+svglite::svglite(glue("figures/Fig5/fig5b.svg"), 
+                 width = 4, height = 3.8)
+plot_smooth(mod_tra3, view = "Body_mass_g", transform = "exp", log = "y",
+            xlab = "Body mass (grams)", ylab = "Bird migratory speed (km/day, log-scale)",
+            col = "#009E73", rug = F, lwd = 3)
+dev.off()
+
+### Overwintering latitude ---------------------------------------------------------------------------------------------------------
+svglite::svglite(glue("figures/Fig5/fig5c.svg"), 
+                 width = 4, height = 3.8)
+plot_smooth(mod_tra3, view = "winlat", transform = "exp", log = "y",
+            plot_all = c("xi_mean","ea_lat","Diet","Body_mass_g","winlat","Time","HWI"),
+            xlab = "Overwintering latitude", ylab = "Bird migratory speed (km/day, log-scale)",
+            col = "#CC79A7", rug = F, lwd = 3, ylim = exp(c(2, 6))
+)
+dev.off()
+
+### Hand-wing index (HWI) ---------------------------------------------------------------------------------------------------------
+svglite::svglite(glue("figures/Fig5/fig5d.svg"), 
+                 width = 4, height = 3.8)
+plot_smooth(mod_tra3, view = "HWI", transform = "exp", log = "y",
+            xlab = "Hand-wing index (HWI)", ylab = "Bird migratory speed (km/day, log-scale)",
+            col = "#CC79A7", rug = F, lwd = 3)
+dev.off()
 
 ### Migration time ---------------------------------------------------------------------------------------------------------
 newdata_m <- data.frame(xi_mean = rep(mean(final4$xi_mean, na.rm = T),2),
