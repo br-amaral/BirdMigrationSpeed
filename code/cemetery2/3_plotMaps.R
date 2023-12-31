@@ -11,7 +11,7 @@ library(glue)
 
 # source 'base' maps ----------------------
 # create map
-source("~/Documents/GitHub/BirdMigrationSpeed/map.R")
+source("~/Documents/GitHub/BirdMigrationSpeed/code/map.R")
 rm(list= ls()[!(ls() %in% c('rr', 'rrb', 'pp'))])
 
 # load data  ------------
@@ -119,7 +119,7 @@ plot_mapvel <- function(sps, yearx, maptype){ # maptype = map hex hexn
           panel.border = element_blank()) #+ sc
 }
 
-plot_mapvel("Tachycineta_bicolor", "all", "hex")
+plot_mapvel("Setophaga_americana", "all", "hex")
 plot_mapvel("Setophaga_americana", "all", "hex")
 plot_mapvel("Setophaga_discolor", "all", "hex")
 

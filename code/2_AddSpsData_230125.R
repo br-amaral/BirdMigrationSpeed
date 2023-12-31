@@ -76,18 +76,20 @@ dim(final) ; dim(final)[1] == dimfinal ;  tail(colnmaes(final))
 
 ### early arrivers (mean arrival date for cells under x latitude, OR mean of the earliest x arrival dates) (paper: only early arrivers are arriving earlier!) ---------------------------
 ea_tab_l <- final %>% 
-  dplyr::select(species, cell_lat2, cell, arr_GAM_mean) %>% 
+  dplyr::select(species, cell_lat2, cell, arr_GAM_mean, mig_cell) %>% 
   distinct() %>% 
   group_by(species) %>% 
-  filter(cell_lat2 < 35) %>% 
+  filter(cell_lat2 < 35,
+         mig_cell == T) %>% 
   mutate(ea_lat = mean(arr_GAM_mean, na.rm = T)) %>% 
   dplyr::select(species, ea_lat) %>% 
   distinct()
 
 ear_lat <- final %>% 
-  dplyr::select(species, cell_lat2,cell_lat, cell, arr_GAM_mean, year) %>% 
+  dplyr::select(species, cell_lat2,cell_lat, cell, arr_GAM_mean, year, mig_cell) %>% 
   distinct() %>% 
-  filter(cell_lat2 < 35)  
+  filter(cell_lat2 < 35,
+         mig_cell == T)  
 spseal_lm <- lmer(data = ear_lat, arr_GAM_mean ~ as.factor(species) -1 + (1|year) + (1|cell) + (1|cell_lat2))
 
 spseal <- cbind(substring(names(getME(spseal_lm, name = "fixef")), 19),

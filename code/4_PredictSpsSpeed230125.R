@@ -11,12 +11,12 @@ final2 <- readRDS("~/OneDrive/BirdMigrationSpeed_copy/final.rds") %>%
   )
 
 ## Green-up date -------------------------------------------------------------------------------------------
-### average species: Troglodytes_aedon -----------------------------------------------------------------------
+### average species: Contopus_virens -----------------------------------------------------------------------
 #### early years -------------------------------------------------------------------------------------------
 new_data_early <- data.frame(AnomDGr = -10,
                              AnomVGr = 0,
                              mig_cell = c(T,F),
-                             species = "Troglodytes_aedon",
+                             species = "Contopus_virens",
                              year = 1,
                              cell_lat2 = 1,
                              sps_cell = 1,
@@ -46,7 +46,7 @@ colnames(pred_early_tab) <- c("mean", "up","low")
 new_data_ave <- data.frame(AnomDGr = 0,
                            AnomVGr = 0,
                            mig_cell = c(T,F),
-                           species = "Troglodytes_aedon",
+                           species = "Contopus_virens",
                            year = 1,
                            cell_lat2 = 1,
                            sps_cell = 1,
@@ -76,7 +76,7 @@ colnames(pred_ave_tab) <- c("mean", "up","low")
 new_data_late <- data.frame(AnomDGr = 10,
                             AnomVGr = 0,
                             mig_cell = c(T,F),
-                            species = "Troglodytes_aedon",
+                            species = "Contopus_virens",
                             year = 1,
                             cell_lat2 = 1,
                             sps_cell = 1,
@@ -285,12 +285,12 @@ pred_late_tabX <- pred_late_tab %>%
          mig_cell = c(T,F))
 
 # Green-up Speed -----------------------------------------------------------------------
-### average species: Troglodytes_aedon -----------------------------------------------------------------------
+### average species: Contopus_virens -----------------------------------------------------------------------
 #### slow years -------------------------------------------------------------------------------------------
 new_data_slow <- data.frame(AnomDGr = 0,
                              AnomVGr = -0.7,
                              mig_cell = c(T,F),
-                             species = "Troglodytes_aedon",
+                             species = "Contopus_virens",
                              year = 1,
                              cell_lat2 = 1,
                              sps_cell = 1,
@@ -320,7 +320,7 @@ colnames(pred_slow_tab) <- c("mean", "up","low")
 new_data_ave <- data.frame(AnomDGr = 0,
                            AnomVGr = 0,
                            mig_cell = c(T,F),
-                           species = "Troglodytes_aedon",
+                           species = "Contopus_virens",
                            year = 1,
                            cell_lat2 = 1,
                            sps_cell = 1,
@@ -350,7 +350,7 @@ colnames(pred_ave_tab) <- c("mean", "up","low")
 new_data_fast <- data.frame(AnomDGr = 0,
                             AnomVGr = 0.7,
                             mig_cell = c(T,F),
-                            species = "Troglodytes_aedon",
+                            species = "Contopus_virens",
                             year = 1,
                             cell_lat2 = 1,
                             sps_cell = 1,
@@ -393,6 +393,14 @@ final2 %>% filter(!is.na(vArrMag)) %>% dplyr::select(species, cell) %>%
 final2 %>% filter(!is.na(vArrMag)) %>% dplyr::select(species, cell) %>% 
   distinct() %>% dplyr::select(species) %>% table() %>% sd()
 
+# min of the number of cells per species
+final2 %>% filter(!is.na(vArrMag)) %>% dplyr::select(species, cell) %>% 
+  distinct() %>% dplyr::select(species) %>% table() %>% min()
+
+# max of the number of cells per species
+final2 %>% filter(!is.na(vArrMag)) %>% dplyr::select(species, cell) %>% 
+  distinct() %>% dplyr::select(species) %>% table() %>% max()
+
 # average number of species per cells
 final2 %>% filter(!is.na(vArrMag)) %>% dplyr::select(species, cell) %>% 
   distinct() %>% dplyr::select(cell) %>% table() %>% mean()
@@ -400,6 +408,14 @@ final2 %>% filter(!is.na(vArrMag)) %>% dplyr::select(species, cell) %>%
 # sd of number of species per cells
 final2 %>% filter(!is.na(vArrMag)) %>% dplyr::select(species, cell) %>% 
   distinct() %>% dplyr::select(cell) %>% table() %>% sd()
+
+# min of number of species per cells
+final2 %>% filter(!is.na(vArrMag)) %>% dplyr::select(species, cell) %>% 
+  distinct() %>% dplyr::select(cell) %>% table() %>% min()
+
+# max of number of species per cells
+final2 %>% filter(!is.na(vArrMag)) %>% dplyr::select(species, cell) %>% 
+  distinct() %>% dplyr::select(cell) %>% table() %>% max()
 
 # speed: max, min, mean, median, sd
 final2 %>% filter(!is.na(vArrMag)) %>% dplyr::select(vArrMag) %>% pull() %>% max()
@@ -412,3 +428,54 @@ final2 %>% filter(!is.na(vArrMag)) %>% dplyr::select(vArrMag) %>% pull() %>% sd(
 final2 %>% filter(!is.na(vArrMag)) %>% dplyr::select(vArrAng) %>% mutate(vArrAng = vArrAng + 180) %>% pull() %>% mean()
 final2 %>% filter(!is.na(vArrMag)) %>% dplyr::select(vArrAng) %>% mutate(vArrAng = vArrAng + 180) %>% pull() %>% sd()
 final2 %>% filter(!is.na(vArrMag)) %>% dplyr::select(vArrAng) %>% mutate(vArrAng = vArrAng + 180) %>% pull() %>% median()
+
+# annual green-up averages
+final2 %>% 
+  dplyr::select(cell, AnomDGr, AnomVGr, year) %>% 
+  distinct() %>% 
+  group_by(year) %>% 
+  summarise(annual_mean = mean(AnomDGr, na.rm = T)) %>% 
+  dplyr::select(annual_mean) %>% 
+  pull() %>% 
+  sort()
+
+# difference in speed (bird and green-up) between the first and second half of study area
+lats <- finalG %>% 
+    dplyr:: select(cell_lat2) %>% 
+    pull()
+
+min(lats)
+max(lats)
+
+med_lat <- (((max(lats) - min(lats))/2) + min(lats))
+
+nort_b_spe <- final2 %>% 
+  filter(cell_lat2>med_lat) %>% 
+  select(vArrMag) %>% 
+  pull() %>% 
+  mean(na.rm = T)
+
+sout_b_spe <- final2 %>% 
+  filter(cell_lat2<=med_lat) %>% 
+  select(vArrMag) %>% 
+  pull() %>% 
+  mean(na.rm = T)
+
+nort_b_spe - sout_b_spe
+
+nort_b_gup <- finalG %>% 
+  filter(cell_lat2>med_lat) %>% 
+  select(vGrMag) %>% 
+  pull() %>% 
+  mean(na.rm = T)
+
+sout_b_gup <- finalG %>% 
+  filter(cell_lat2<=med_lat) %>% 
+  select(vGrMag) %>% 
+  pull() %>% 
+  mean(na.rm = T)
+
+nort_b_gup - sout_b_gup
+
+
+
