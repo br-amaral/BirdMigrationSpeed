@@ -1,5 +1,5 @@
 ## Script to import phenological mismatch data (results from Youngflesh et al 2021) and create tibbles 
-##   with bird and green-up velocity to run models in 2_RunMods
+##   with bird and green-up velocity to run models in 3_ModelPlots.R
 ## Input:  arrival_master_2020-07-21.csv
 #          MidGreenup_2020-08-06-forest.csv
 ## Output: velocityB.rds 
@@ -17,9 +17,11 @@ library(REdaS)
 library(dplyr)
 
 # import data ---------------------------
+## file paths
 BIRDDATA_PATH <- glue("data/source/arrival_master_2020-07-21.csv") # may not be the most current data file - but what i first found
 GREENDATA_PATH <- glue("data/source/MidGreenup_2020-08-06-forest.csv")
 
+## read files
 bird1 <- read_csv(BIRDDATA_PATH) %>% 
   filter(VALID_GAM == TRUE) ##%>% filter(species == "Setophaga_discolor")
 bird1 <- bird1[,-1]
