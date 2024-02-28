@@ -6,8 +6,6 @@ library("glue")
 library(lemon)
 library(lme4)
 library(mgcv)
-#library(MASS)
-#library(cAIC4)
 
 colnmaes <- colnames
 # IMPORT DATA ---------------------------
