@@ -1,13 +1,24 @@
-## Script to import phenological mismatch data (results from Youngflesh et al 2021) and create tibbles 
+## Code to import phenological mismatch data (results from Youngflesh et al 2021) and create tibbles 
 ##   with bird and green-up velocity to run models in 3_ModelPlots.R
+#
 ## Input:  arrival_master_2020-07-21.csv
 #          MidGreenup_2020-08-06-forest.csv
-## Output: velocityB.rds 
-#          cellaveB.rds
-#          velocityG.rds
-#          cellaveG.rds
+#
+## Output: velocityB.rds : tibble with calculated bird speeds
+#          cellaveB.rds : tibble with the coordinates for the velocity vectors for map for the birds
+#          velocityG.rds : tibble with calculated green-up speeds
+#          cellaveG.rds : tibble with the coordinates for the velocity vectors for map for the green-up
 #          birdgreen.rds
 #          cellcoor.rds
+
+
+
+
+## bird and green up velocity merged
+write_rds(final2, file = "data/birdgreen.rds")
+write_rds(cells %>% dplyr::select(cell, cell_lat, cell_lng), file = "data/cellcoor.rds")
+write_rds(cellnumbs, file = "data/cellnumbs.rds")
+write_rds(cells, file = "data/cellnei.rds")
 
 library(glue)
 library(tidyverse)
@@ -313,17 +324,17 @@ final2 <- final %>%
   mutate(cell_lat = scale(cell_lat, scale = FALSE))  #scale lat for regression analysis
 
 # save output tibbles to run models
-## velocities of rbird and green up
-saveRDS(velocityB, file = "data/velocityB.rds")
-saveRDS(velocityG, file = "data/velocityG.rds")
+## velocities of bird and green up
+write_rds(velocityB, file = "data/velocityB.rds")
+write_rds(velocityG, file = "data/velocityG.rds")
 ## files with the coordinates for the velocity vectors for the map (all years together)
-saveRDS(predsB, file = "data/cellaveB.rds")
-saveRDS(predsG, file = "data/cellaveG.rds")
+write_rds(predsB, file = "data/cellaveB.rds")
+write_rds(predsG, file = "data/cellaveG.rds")
 ## bird and green up velocity merged
-saveRDS(final2, file = "data/birdgreen.rds")
-saveRDS(cells %>% dplyr::select(cell, cell_lat, cell_lng), file = "data/cellcoor.rds")
-saveRDS(cellnumbs, file = "data/cellnumbs.rds")
-saveRDS(cells, file = "data/cellnei.rds")
+write_rds(final2, file = "data/birdgreen.rds")
+write_rds(cells %>% dplyr::select(cell, cell_lat, cell_lng), file = "data/cellcoor.rds")
+write_rds(cellnumbs, file = "data/cellnumbs.rds")
+write_rds(cells, file = "data/cellnei.rds")
 
 ## example plot for supplementary materials fig X
 cells_ex <- cells %>% filter(cell %in% c(6,7,14,15,16,23,24))
