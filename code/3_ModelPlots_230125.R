@@ -44,21 +44,22 @@ source("code/5_Maps_230125.R")
 cellnumbs <- readRDS(file = "data/cellnumbs.rds")
 cells <- readRDS(file = "data/cellcoor.rds")
 
+#final2 <- readRDS("data/final2_2.rds") %>% 
 final2 <- readRDS("data/final.rds") %>% 
   #readRDS("~/OneDrive/BirdMigrationSpeed_copy/final.rds") %>% 
   #"~/Library/CloudStorage/OneDrive-ThePennsylvaniaStateUniversity/BirdMigrationSpeed_copy/data/final.rds") %>% 
-  mutate(species = as.factor(species), 
-         cell = as.factor(cell),
-         #mig_cell = abs(mig_cell - 1),
-         mig_cell = as.factor(mig_cell),# %>% as.numeric(),
-         sps_cell = as.factor(glue("{species}_{cell}"))
+  mutate( species = as.factor(species), 
+          cell = as.factor(cell),
+          #mig_cell = abs(mig_cell - 1),
+          mig_cell = as.factor(mig_cell),# %>% as.numeric(),
+          sps_cell = as.factor(glue("{species}_{cell}"))
   )
 
 finalG <- final2 %>% 
   dplyr::select(cell, year, cell_lat2, vGrMag, gr_mn, mig_cell, breed_cell) %>% 
   distinct() %>% 
-  mutate(cell = as.factor(cell),
-         mig_cell = as.factor(mig_cell))
+  mutate( cell = as.factor(cell),
+          mig_cell = as.factor(mig_cell))
 
 # Model 1 - bird speed varying with green-up --------------------------------------------------------
 mod_gu <- 
@@ -142,18 +143,18 @@ yhat.incgu <- predict(mod_gu,
                       exclude = list("s(year)","s(cell_lat2)","s(sps_cell)", "s(cell)"))
 
 mig_efftab <- as.data.frame(matrix(ncol = 3,
-                                   data = c(yhat.incgu$fit, 
+                                  data = c(yhat.incgu$fit, 
                                             yhat.incgu$fit + yhat.incgu$se.fit,
                                             yhat.incgu$fit - yhat.incgu$se.fit),
-                                   byrow = F)) 
+                                  byrow = F)) 
 
 colnames(mig_efftab) <- c("mean", "up","low")
 mig_efftab$ran <- c("mig", "bree")
 
 mig_efftabx <- mig_efftab %>% 
   mutate(mean = exp(mean),
-         up = exp(up),
-         low = exp(low))
+        up = exp(up),
+        low = exp(low))
 
 ## Figure 3c - speed and range type (model 1) --------------------------------------------------------
 svglite::svglite(glue("figures/Fig2/fig2_range.svg"), 
@@ -535,7 +536,7 @@ ggplot(aes(x = time, y = mean), data = time_efftab) +
                      limits = c(2, 6),
                      breaks = log(c(10,25, 50, 100, 250)), labels = c(10, 25, 50, 100, 250)) +
   labs(y = "Bird speed (km/day, log scale)") +
-  scale_x_discrete(labels = c("Diurnal","Nocturnal")) Fig3
+  scale_x_discrete(labels = c("Diurnal","Nocturnal"))
 
 
 ## Figure 2 - individual species speeds ----------------------------------

@@ -84,7 +84,7 @@ plot_mapvel2 <- function(sps, year, rang, pllot) {
                          breaks = p_scale,
                          labels = p_scale) +
       theme(plot.margin=grid::unit(c(0,0,0,0), "mm"),
-            panel.grid.major = element_line(color = alpha('black', 0.2), size = 0.5),
+            panel.grid.major = element_line(color = alpha('black', 0.2), linewidth = 0.5),
             panel.ontop = TRUE,
             legend.title=element_text(size=10.5),
             legend.text=element_text(size=10),
@@ -169,7 +169,7 @@ plot_mapvel2 <- function(sps, year, rang, pllot) {
       theme_bw() +
       theme(
         panel.grid.major = element_line(color = alpha('black', 0.2),
-                                        size = 0.5),
+                                        linewidth = 0.5),
         panel.ontop = TRUE,
         plot.title = element_text(hjust = 0.5),
         panel.background = element_rect(fill = NA),
@@ -184,7 +184,7 @@ plot_mapvel2 <- function(sps, year, rang, pllot) {
       geom_segment(data = preds4, aes(x = cell_lng, y = cell_lat, 
                                       xend = x, yend = y,
                                       group = cell),
-                   arrow = arrow(length = unit(0.175, "cm")), size = 0.8) +
+                   arrow = arrow(length = unit(0.175, "cm")), linewidth = 0.8) +
       coord_map("ortho", orientation = c(35, -80, 0),
                 xlim = c(-95, -67), ylim = c(25, 50))  
 
@@ -207,4 +207,4 @@ plot_mapvel2(sps = "Setophaga_magnolia", year = "all", rang = "all", pllot = 1)
 plot_mapvel2(sps = "Setophaga_americana", year = "all", rang = "all", pllot = 1)
 plot_mapvel2(sps = "Setophaga_petechia", year = "all", rang = "all", pllot = 1)
 
-# develop specie specific values for scale?
+# develop species specific values for scale?

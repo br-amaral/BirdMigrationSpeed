@@ -1,3 +1,21 @@
+## Code to add species traits data from the literature and also calculate extra traits from the data
+#
+## Input:  data/birdgreen.rds : tibble with bird speed calculations from 1_GetEstimates.R 
+#          data/velocityG.rds : 
+#          data/cellcoor.rds :     
+#          data/cellnumbs.rds : 
+#
+#          data/source/traits/Table_S1.csv : bird overwinter latitude data (Youngflesh et al. [2021])
+#          data/source/traits/data_sensi.rds : bird sensitivity data (Youngflesh et al. [2021])
+#          data/source/traits/gcb14540-sup-0001-supinfo_mass.csv : bird body mass data (Horton et al. [2019])
+#          data/source/traits/jane13345-sup-0002-tables1_diet.csv : bird diet data (La Sorte & Graham [2021])
+#          data/source/traits/species_tax_ord.csv : bird family data (BirdTree.org)
+#          data/source/traits/birds_HWI.csv : bird hand-wing index (Sheard et al. [2020])
+#           : Bird migration time data (Birds of the World [2022])
+
+## Output: 
+
+# load packages --------------------------
 library(egg)
 library(ggplot2)
 library(tidyverse)
@@ -7,29 +25,34 @@ library(lemon)
 library(lme4)
 library(mgcv)
 
-colnmaes <- colnames
-# IMPORT DATA ---------------------------
-final <- readRDS(file = "data/birdgreen.rds")
+# import data ---------------------------
+## file paths
+BIRD_SPEED_PATH <- "data/birdgreen.rds"
+GUP_SPEED_PATH  <- "data/velocityG.rds"
 
-hist(final$vArrMag)
-plot(final$vArrMag)
+CELL_COOR_PATH <- "data/cellcoor.rds"
+CELL_NUMB_PATH <- "data/cellnumbs.rds"
 
-hist(final$vArrMag)
-plot(final$vArrMag)
-ggplot() +
-  geom_boxplot(aes(y = final$vArrMag, x = final$species,
-                   colour = final$species)) +
-  theme(legend.position = "none")
+TRAIT_OVER_PATH <- "data/source/traits/Table_S1.csv"
+TRAIT_SENS_PATH <- "data/source/traits/data_sensi.rds"
+TRAIT_MASS_PATH <- "data/source/traits/gcb14540-sup-0001-supinfo_mass.csv"
+TRAIT_DIET_PATH <- "data/source/traits/jane13345-sup-0002-tables1_diet.csv"
+TRAIT_FAMI_PATH <- "data/source/traits/species_tax_ord.csv"
+TRAIT_HWI_PATH <- "data/source/traits/birds_HWI.csv"
+TRAIT_MIGTIM_PATH <- "data/source/traits/sps_migtime.csv"
 
-#final <- final %>% 
-#  filter(is.na(vArrMag) | vArrMag < 3000)
-cells <- readRDS("~/Library/Mobile Documents/com~apple~CloudDocs/BirdMigrationSpeed/data/cellcoor.rds")
-velocityG <- readRDS("~/Library/Mobile Documents/com~apple~CloudDocs/BirdMigrationSpeed/data/velocityG.rds") %>% 
+## read files
+final <- read_rds(file = BIRD_SPEED_PATH)
+
+cells <- readRDS(CELL_COOR_PATH)
+
+velocityG <- readRDS(GUP_SPEED_PATH) %>% 
   left_join(., cells, by = "cell")
 dimfinal <- nrow(final)
-# FORMAT DATA ---------------------------- 
-### overwinter latitude (from how far south do we come!) ---------------------------
-winlat <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/BirdMigrationSpeed/data/Table_S1.csv") %>%
+
+# Add data from the literature and format tibbles ------------------------------------ 
+## overwinter latitude (from how far south do birds come) ---------------------------
+winlat <- read_csv(TRAIT_OVER_PATH) %>%
   dplyr::select(Species, Overwinterlatitude) %>% 
   mutate(species2 = Species) %>% 
   rename(species = Species, 
@@ -38,41 +61,90 @@ winlat <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/BirdMigration
 
 final <- left_join(final, winlat, by = "species")
 
-dim(final) ; dim(final)[1] == dimfinal ;  tail(colnmaes(final))
+# check!
+dim(final) ; dim(final)[1] == dimfinal ;  tail(colnames(final))
 
-### species sensitivity ---------------------------
-sensi <- readRDS("~/Library/Mobile Documents/com~apple~CloudDocs/BirdMigrationSpeed/data/data_sensi.RDS") %>% 
+## species sensitivity --------------------------------------------------------------
+# sensitivity for a species in a cell
+sensi <- readRDS(TRAIT_SENS_PATH) %>% 
   dplyr::select(sci_name,
                 cell,
                 beta_mean) %>% 
   rename(species = sci_name,
          sensi = beta_mean) 
 
-sensisps_c <- readRDS("data/source/spe_sensi.rds") %>% 
-  rename(species = sci_name)
-final <- final %>% 
-  left_join(., sensisps_c, by = "species")
-
-dim(final) ; dim(final)[1] == dimfinal ;  tail(colnmaes(final))
-
-cellnumbs <- readRDS("~/Library/Mobile Documents/com~apple~CloudDocs/BirdMigrationSpeed/data/cellnumbs.rds")
+cellnumbs <- readRDS(CELL_NUMB_PATH)
 sensi <- left_join(sensi, cellnumbs, by = "cell") %>% 
   dplyr::select(-cell) %>% 
   rename(cell = cell2)
 
 final <- left_join(final, sensi, by = c("species","cell")) 
 
-dim(final) ; dim(final)[1] == dimfinal ;  tail(colnmaes(final))
+# check!
+dim(final) ; dim(final)[1] == dimfinal ;  tail(colnames(final))
 
+# sensitivity per species
+sensisps_c <- sensi %>% 
+  group_by(species) %>% 
+  summarise(sensi_mean = mean(sensi, na.rm = T),
+            sensi_sd = sd(sensi, na.rm = T))
+
+final <- final %>% 
+  left_join(., sensisps_c, by = "species")
+
+# check!
+dim(final) ; dim(final)[1] == dimfinal ;  tail(colnames(final))
+
+# add cell coordinates
 final <- left_join(final,
                    cells %>% 
                      dplyr::select(cell, cell_lat) %>% 
                      rename(cell_lat2 = cell_lat),
                    by = "cell")
 
-dim(final) ; dim(final)[1] == dimfinal ;  tail(colnmaes(final))
+# check again!
+dim(final) ; dim(final)[1] == dimfinal ;  tail(colnames(final))
 
-### early arrivers (mean arrival date for cells under x latitude, OR mean of the earliest x arrival dates) (paper: only early arrivers are arriving earlier!) ---------------------------
+## Species body mass ----------------------------------------------------------------------------------
+mass_tax <- read_csv(TRAIT_MASS_PATH) %>% 
+  dplyr::select(species,Order,Family,Body_mass_g)
+
+unique(final[which(final$species %in% pull(mass_tax[which(is.na(mass_tax$Body_mass_g)),1])),3])
+
+final <- left_join(final, mass_tax, by = "species")
+dim(final) ; dim(final)[1] == dimfinal ;  tail(colnames(final))
+
+## Species migration time -----------------------------------------------------------------------------
+mig_time <- read_csv(TRAIT_MIGTIM_PATH) %>% 
+  dplyr::select(species, Time)
+
+final <- left_join(final, mig_time, by = "species")
+dim(final) ; dim(final)[1] == dimfinal ;  tail(colnames(final))
+
+## Species diet group ---------------------------------------------------------------------------------
+diet <- read_csv(TRAIT_DIET_PATH) %>% 
+  dplyr::select(Species, Diet) %>% 
+  rename(species = Species)
+unique(final[which(final$species %in% pull(diet[which(is.na(diet$Diet)),1])),3])
+
+final <- left_join(final, diet, by = "species")
+dim(final) ; dim(final)[1] == dimfinal ;  tail(colnames(final))
+
+## Species taxonomic order (family) -------------------------------------------------------------------
+famcol <- read_csv(TRAIT_FAMI_PATH)
+final <- left_join(final, famcol, by="species")
+dim(final) ; dim(final)[1] == dimfinal ;  tail(colnames(final))
+
+## Species hand-wing index ----------------------------------------------------------------------------
+# wing shape values
+hwicol <- read_csv(TRAIT_HWI_PATH) %>% 
+  dplyr::select(species, `HWI`)  ## used the IUCN names
+final <- left_join(final, hwicol, by="species")
+dim(final) ; dim(final)[1] == dimfinal ;  tail(colnames(final))
+
+# Calculate species specific metrics from data ----------------------------------------------------
+## date when birds first arrive in North America (on average) -------------------------------------
+# mean arrival date for cells under 35N latitude
 ea_tab_l <- final %>% 
   dplyr::select(species, cell_lat2, cell, arr_GAM_mean, mig_cell) %>% 
   distinct() %>% 
@@ -100,7 +172,7 @@ spseal$ea_lat_m <- as.numeric(spseal$ea_lat_m)
 final <- final %>% 
   left_join(., spseal, by = "species") 
 
-dim(final) ; dim(final)[1] == dimfinal ;  tail(colnmaes(final))
+dim(final) ; dim(final)[1] == dimfinal ;  tail(colnames(final))
 
 ea_tab_l_yr <- final %>% 
   dplyr::select(species, cell_lat2, cell,arr_GAM_mean, AnomDArr, year) %>% 
@@ -127,38 +199,7 @@ final <- left_join(final, ea_tab_l_yr, by = c("species", "year"))
 
 final <- left_join(final, ea_tab_ano, by = c("species", "year"))
 
-dim(final) ; dim(final)[1] == dimfinal ;  tail(colnmaes(final))
-
-### body mass, distance and taxonomy (random effect for family and species nested, NOP!) ---------------------------
-mass_tax <- read_csv("data/source/gcb14540-sup-0001-supinfo_mass.csv") %>% 
-  dplyr::select(species,Order,Family,Body_mass_g,Distance_m, Time) %>% 
-  mutate(Distance_m = scale(as.numeric(Distance_m)))
-
-unique(final[which(final$species %in% pull(mass_tax[which(is.na(mass_tax$Body_mass_g)),1])),3])
-
-final <- left_join(final, mass_tax, by = "species")
-dim(final) ; dim(final)[1] == dimfinal ;  tail(colnmaes(final))
-
-### diet group ---------------------------
-diet <- read_csv("data/source/jane13345-sup-0002-tables1_diet.csv") %>% 
-  dplyr::select(Species, Diet) %>% 
-  rename(species = Species)
-unique(final[which(final$species %in% pull(diet[which(is.na(diet$Diet)),1])),3])
-
-final <- left_join(final, diet, by = "species")
-dim(final) ; dim(final)[1] == dimfinal ;  tail(colnmaes(final))
-
-### taxonomic order ----------------------------------------------
-famcol <- read_csv("data/species_tax_ord.csv")
-final <- left_join(final, famcol, by="species")
-dim(final) ; dim(final)[1] == dimfinal ;  tail(colnmaes(final))
-
-### HWI ----------------------------------------------
-# wing shape values
-hwicol <- read_csv("data/birds_HWI.csv") %>% 
-  dplyr::select(species, `HWI`)  ## used the IUCN names
-final <- left_join(final, hwicol, by="species")
-dim(final) ; dim(final)[1] == dimfinal ;  tail(colnmaes(final))
+dim(final) ; dim(final)[1] == dimfinal ;  tail(colnames(final))
 
 
 ## remove rows with bird speed greater than 3000
@@ -167,60 +208,4 @@ for(i in 1:nrow(final)){
   } else {if(final$vArrMag[i] > 3000) {final$vArrMag[i] <- NA}}
 }
 
-
-## annual means
-bspe_yr_lm <- lmer(data = final %>% dplyr::select(vArrMag, cell, cell_lat, species, year) %>% 
-                     filter (!species == "Setophaga_pinus") %>% filter (!species == "Pipilo_erythrophthalmus") %>%	distinct(),
-                   log(vArrMag) ~ as.factor(species) * as.factor(year) -1 + (1|cell))
-
-pred.dat <- expand.grid(species=sort(unique(final %>% filter (!species == "Setophaga_pinus") %>% filter (!species == "Pipilo_erythrophthalmus") %>% 
-                                              dplyr::select(species) %>% pull())),
-                        year=seq(2003,2017,1))
-pred.dat <- pred.dat %>% 
-  mutate(pred = predict(bspe_yr_lm, newdata=pred.dat, re.form =~0)) %>% 
-  left_join(., final %>% dplyr::select(species, species2) %>% distinct(), by = "species")
-
-# bird speed anomaly
-bspe_yr_lmA <- lmer(data = final %>% dplyr::select(AnomVArr, cell, cell_lat, species, year) %>% 
-                      filter (!species == "Setophaga_pinus") %>% filter (!species == "Pipilo_erythrophthalmus") %>%	distinct(),
-                    AnomVArr ~ as.factor(species) * as.factor(year) + (1|cell))
-
-pred.datA1 <- expand.grid(species=sort(unique(final %>% filter (!species == "Setophaga_pinus") %>% filter (!species == "Pipilo_erythrophthalmus") %>% 
-                                                dplyr::select(species) %>% pull())),
-                          year=seq(2003,2017,1))
-pred.datA1 <- pred.datA1 %>%  mutate(pred = predict(bspe_yr_lmA, newdata=pred.datA1, re.form =~0)) %>% 
-  left_join(., final %>% dplyr::select(species, species2) %>% distinct(), by = "species")
-
-# green up speed anomaly
-guspeA_lm <- lmer(data = final %>% dplyr::select(AnomVGr, cell, cell_lat, year) %>% distinct(),
-                  AnomVGr ~ as.factor(year) - 1 + (1|cell))
-yearsAlm <- cbind(as.numeric(substring(names(getME(guspeA_lm, name = "fixef")), 16)),
-                  as.numeric(getME(guspeA_lm, name = "fixef")))
-colnames(yearsAlm) <- c("year", "gu_speA_mea")
-yearsAlm <- as.data.frame(yearsAlm)
-rownames(yearsAlm) <- NULL
-
-# green up date anomaly
-gudatA_lm <- lmer(data = final %>% dplyr::select(AnomDGr, cell, cell_lat, year) %>% distinct(),
-                  AnomDGr ~ as.factor(year) - 1 + (1|cell))
-yeardAlm <- cbind(as.numeric(substring(names(getME(gudatA_lm, name = "fixef")), 16)),
-                  as.numeric(getME(gudatA_lm, name = "fixef")))
-colnames(yeardAlm) <- c("year", "gu_datA_mea")
-yeardAlm <- as.data.frame(yeardAlm)
-rownames(yeardAlm) <- NULL
-
-annual <- left_join(pred.dat %>% rename(BS = pred), 
-                    pred.datA1 %>% dplyr::select(species, pred, year) %>% rename(ABS = pred),
-                    by = c("species","year")) %>% 
-  #left_join(., yearslm, by = "year") %>% 
-  #left_join(., yeardlm, by = "year") %>% 
-  left_join(., yearsAlm, by = "year") %>% 
-  left_join(., yeardAlm, by = "year") %>% 
-  rename(#med_spe = meds,
-    #         GS = gu_spe_mean,
-    #         GD = gu_dat_mea,
-    AGS = gu_speA_mea,
-    AGD = gu_datA_mea)
-
-saveRDS(final, file = "data/final.rds")
-saveRDS(annual, file = "data/annual.rds")
+saveRDS(final, file = "data/final2_2.rds")
