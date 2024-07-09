@@ -244,7 +244,6 @@ summary(mod_lat_guspe)
 
 ## Figure 4a - speed and latitude (model 1 and 2) --------------------------------------------------------
 svglite::svglite(glue("figures/Fig4/fig4a_both.svg"), 
-#svglite::svglite(glue("figures/Fig3/fig3a_greenup.svg"), 
     width = 4.2, height = 3.9)
 plot_smooth(mod_lat_guspe, view = "cell_lat2",
             rug = F, transform = "exp", log = "y",
@@ -984,3 +983,164 @@ cell_sdsV <- final2 %>%
   summarise(sd = sd(AnomVGr, na.rm = T)) %>% 
   arrange(sd) 
 cell_sdsV[round((nrow(cell_sdsV)/2),1),]
+
+## data points for figure 3a - speed and green-up date (model 1) --------------------------------------------------------
+svglite::svglite(glue("figures/Fig2/data_fig2_date.svg"), 
+    width = 4, height = 4)
+
+plot_smooth(mod_gu, view = "AnomDGr", cond=list(mig_cell=F), 
+            ylim = exp(c(3.7,4.6)), 
+            rug = F, transform = "exp", log = "y",
+            ylab = "Bird speed (km/day, log scale)", 
+            xlab = "Anomaly on green-up date (days)",
+            col = "#F0E442", lwd = 3, rm.ranef = TRUE) 
+
+plot_smooth(mod_gu, view = "AnomDGr", cond=list(mig_cell=T), add = T, 
+            rug = F,lty = "dashed", transform = "exp", log = "y",
+            col = "#E69F00", lwd = 3, rm.ranef = TRUE) 
+
+dev.off()
+
+## data points for figure 3b - speed and green-up speed (model 1) --------------------------------------------------------
+svglite::svglite(glue("figures/Fig2/fig2_speed.svg"), 
+    width = 4, height = 4)
+
+plot_smooth(mod_gu, view = "AnomVGr", cond=list(mig_cell=T), 
+            lty = "dashed", 
+            rug = F, transform = "exp", log = "y",
+            ylab = NA, xlab = "Anomaly on green-up speed (km/day)",
+            col = "#E69F00", lwd = 3, ylim = exp(c(3.7, 4.6)), 
+            rm.ranef = TRUE)
+
+plot_smooth(mod_gu, view = "AnomVGr", cond=list(mig_cell=F), 
+            add = T, rug = F, transform = "exp", log = "y",
+            col = "#F0E442", lwd = 3, rm.ranef = TRUE) 
+
+dev.off()
+
+### data points for figure 3c range on bird speed ---------------------------------------------
+newdata <- data.frame(AnomDGr = rep(0,2),
+                      AnomVGr = rep(0,2), # mean(final$AnomVGr, na.rm = T),
+                      mig_cell = as.factor(c(T,F)))
+
+newdata <- newdata %>% distinct()
+newdata$species <- 1
+newdata$year <- 1
+newdata$cell_lat2 <- 1
+newdata$cell <- 1
+newdata$sps_cell <- 1
+
+yhat.incgu <- predict(mod_gu,
+                      newdata = newdata,
+                      se.fit = TRUE, 
+                      iterms.type=2, 
+                      re.form=NA,
+                      exclude = list("s(year)","s(cell_lat2)","s(sps_cell)", "s(cell)"))
+
+mig_efftab <- as.data.frame(matrix(ncol = 3,
+                                  data = c(yhat.incgu$fit, 
+                                            yhat.incgu$fit + yhat.incgu$se.fit,
+                                            yhat.incgu$fit - yhat.incgu$se.fit),
+                                  byrow = F)) 
+
+colnames(mig_efftab) <- c("mean", "up","low")
+mig_efftab$ran <- c("mig", "bree")
+
+mig_efftabx <- mig_efftab %>% 
+  mutate(mean = exp(mean),
+        up = exp(up),
+        low = exp(low))
+
+#svglite::svglite(glue("figures/Fig2/data_fig2_range.svg"), 
+#    width = 3, height = 2.8)
+
+ggplot(aes(x = ran, y = mean), data = mig_efftab) +
+  geom_errorbar(aes(ymin=low, ymax=up, color = factor(ran)), width=.1,
+                position=position_dodge(.9), data = mig_efftab) +
+  geom_point(aes(x = ran, y = mean, col = ran), data = mig_efftab, size = 2) +
+  scale_color_manual(values = c("mig" = "#E69F00", "bree" = "#F0E442")) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(colour = "black", size = 0.35),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_text(angle=90, hjust=0.5, size = 12, colour = "black"),
+        axis.text.x = element_text(size = 12, colour = "black"),
+        legend.position = "none",
+        axis.ticks.length = unit(0.3, "cm"),
+        axis.ticks = element_line(colour = "black", size = 0.35),
+        rect = element_rect(fill = "transparent")) +
+  scale_y_continuous(trans='log10', limits = c(3.7, 4.6), 
+                     breaks = log(c(40,50,60,70,80,90)), labels = c(40,50,60,70,80,90)) +
+  scale_x_discrete(labels = c("Breeding\nrange","Migratory\nrange")) 
+
+#dev.off()
+
+
+## data points for figure 4a - speed and latitude (model 1 and 2) --------------------------------------------------------
+#svglite::svglite(glue("figures/Fig4/data_fig4a_both.svg"), 
+#    width = 4.2, height = 3.9)
+plot_smooth(mod_lat_guspe, view = "cell_lat2",
+            rug = F, transform = "exp", log = "y",
+            #rm.ranef = T,
+            #add = T,
+            col = "#009E73", 
+            #ylab = "Green-up speed (km/day, log-scale)",
+            ylab = "Speed (km/day, log-scale)",
+            xlab = "Latitude (degrees)",
+            lwd = 2,
+            ylim = c(15,305),
+            xlim = c(30,48),
+            xaxt='n', 
+            rm.ranef = TRUE)
+# define a custom axis
+axis(side = 1, at = c(30, 35, 40, 45, 50))
+#dev.off()
+
+# svg(glue("figures/Fig3/fig3_bird.svg"), 
+#   width = 4, height = 3)
+plot_smooth(mod_gu, view = "cell_lat2", 
+            transform = "exp", log = "y",
+            rug = F, 
+            #rm.ranef = TRUE,
+            col = "#CC79A7", 
+            ylab = "Bird migratory speed (km/day, log-scale)",
+            xlab = "Latitude (degrees)",
+            lwd = 2,
+            add = T,
+            xlim = c(30,48),
+            xaxt='n', 
+            rm.ranef = TRUE)
+legend(42.5, 295, legend=c("Green-up", "Bird"),
+       col=c("#009E73", "#CC79A7"), lty = 1, cex=0.6, lwd = 1.5)
+#dev.off()
+
+## data points for figure 4b - speed and latitude (model 4) --------------------------------------------------------
+svglite::svglite(glue("figures/Fig3/data_fig3b.svg"), 
+                  width = 4, height = 3.8)
+
+plot_smooth(mod_lag, view = "past_spe_z", 
+            ylim = c(-15,10), # xlab = "Bird past speed (z-score)",
+            xlab = "Z-score",
+            ylab = "Anomaly on Relative Arrival", col = "#CC79A7", 
+            rug = F, lwd = 2, lty = 3, 
+            rm.ranef = FALSE) 
+
+plot_smooth(mod_lag, view = "ea_lat_yr_z", 
+            xlab = "Bird first arrival date (z-score)",
+            add = T, rug = F, col = "#56B4E9", 
+            lwd = 2, lty = 3, 
+            rm.ranef = FALSE) 
+
+plot_smooth(mod_lag, view = "gr_mn_z", 
+            xlab = "Green-up date (z-score)", add = T,
+            col = "#009E73", rug = F, lwd = 2, lty = 3, 
+            rm.ranef = FALSE)
+
+legend(-3, 10, legend=c("Green-up date", "Bird speed prior to arrival", "Bird first arrival date"),
+        col=c("#009E73", "#CC79A7","#56B4E9"), lty = 3, cex=0.6, lwd = 2)
+
+dev.off()
