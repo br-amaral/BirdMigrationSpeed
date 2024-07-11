@@ -985,15 +985,42 @@ cell_sdsV <- final2 %>%
 cell_sdsV[round((nrow(cell_sdsV)/2),1),]
 
 ## data points for figure 3a - speed and green-up date (model 1) --------------------------------------------------------
+## all data points and after highlight 5 species
+
 svglite::svglite(glue("figures/Fig2/data_fig2_date.svg"), 
     width = 4, height = 4)
 
+
+library(data.table)
+
+model_1 <- mod_gu
+preds <- predict(model_1,se.fit=TRUE)
+my_data <- data.frame(mu=preds$fit, 
+                      low =(preds$fit - 1.96 * preds$se.fit), 
+                      high = (preds$fit + 1.96 * preds$se.fit))
+
+ggplot() +
+  geom_point(aes(x=mod_gu$model$AnomDGr, y=exp(my_data$mu)), 
+            size=1, col="blue") +
+            #ylim(c(exp(c(3.7,4.6))))
+  geom_smooth(data=my_data,
+              aes(#ymin = exp(low), ymax = exp(high), 
+              x=mod_gu$model$AnomDGr, y = exp(mu)), 
+              stat = "identity", col="green")
+
 plot_smooth(mod_gu, view = "AnomDGr", cond=list(mig_cell=F), 
-            ylim = exp(c(3.7,4.6)), 
+            #ylim = exp(c(3.7,4.6)), 
+            ylim = exp(c(2,6.5)), 
+
             rug = F, transform = "exp", log = "y",
             ylab = "Bird speed (km/day, log scale)", 
             xlab = "Anomaly on green-up date (days)",
             col = "#F0E442", lwd = 3, rm.ranef = TRUE) 
+
+## create a matrix with the data used in the model, the predictions, 
+mod_gu_data <- cbind()
+points(x = mod_gu$model$AnomDGr, y = exp(mod_gu$model$`log(vArrMag)`), col = mod_gu$model$species)
+mod_gu$model$species
 
 plot_smooth(mod_gu, view = "AnomDGr", cond=list(mig_cell=T), add = T, 
             rug = F,lty = "dashed", transform = "exp", log = "y",
