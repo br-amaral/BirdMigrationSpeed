@@ -1018,13 +1018,47 @@ plot_smooth(mod_gu, view = "AnomDGr", cond=list(mig_cell=F),
             col = "#F0E442", lwd = 3, rm.ranef = TRUE) 
 
 ## create a matrix with the data used in the model, the predictions, 
-mod_gu_data <- cbind()
-points(x = mod_gu$model$AnomDGr, y = exp(mod_gu$model$`log(vArrMag)`), col = mod_gu$model$species)
-mod_gu$model$species
+mod_gu_data <- cbind(mod_gu$model$AnomDGr, mod_gu$model$AnomVGr,
+                      exp(mod_gu$model$`log(vArrMag)`), 
+                      mod_gu$model$mig_cell,
+                      mod_gu$model$year,
+                      mod_gu$model$cell_lat2,
+                      mod_gu$model$sps_cell)
+colnames(mod_gu_data) <- c("AnomDGr", "AnomVGr", "vArrMag",
+                          "mig_cell", "year",
+                          "cell_lat2", "sps_cell")
+mod_gu_data <- as_tibble(mod_gu_data)
+mod_gu_data$species <- mod_gu$model$species
 
-plot_smooth(mod_gu, view = "AnomDGr", cond=list(mig_cell=T), add = T, 
+plot_smooth(mod_gu, view = "AnomDGr", cond=list(mig_cell=T),
             rug = F,lty = "dashed", transform = "exp", log = "y",
-            col = "#E69F00", lwd = 3, rm.ranef = TRUE) 
+            col = "#E69F00", lwd = 3, rm.ranef = TRUE,
+            ylim = exp(c(3,5))) 
+
+mod_gu_data_COVI <- mod_gu_data %>% 
+                  filter(species == "Contopus_virens")
+
+points(x = mod_gu_data_COVI$AnomDGr, y = mod_gu_data_COVI$vArrMag, col = mod_gu_data_COVI$species)
+
+sps <- mod_gu_data  %>% 
+        select(species) %>%
+        distinct() %>% 
+        pull()
+
+par(mfrow = c(11 ,5))
+for(i in 1:length(sps)){
+  plot_smooth(mod_gu, view = "AnomDGr", cond=list(mig_cell=T),
+            rug = F,lty = "dashed", transform = "exp", log = "y",
+            col = "#E69F00", lwd = 3, rm.ranef = TRUE,
+            ylim = exp(c(3,5))) 
+
+  mod_gu_data_COVI <- mod_gu_data %>% 
+                  filter(species == sps[i])
+
+  points(x = mod_gu_data_COVI$AnomDGr, y = mod_gu_data_COVI$vArrMag, col = mod_gu_data_COVI$year)
+}
+
+## plot data for sps 1,6,19,23,29,49
 
 dev.off()
 
