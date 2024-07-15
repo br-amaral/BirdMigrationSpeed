@@ -987,8 +987,6 @@ cell_sdsV[round((nrow(cell_sdsV)/2),1),]
 ## data points for figure 3a - speed and green-up date (model 1) --------------------------------------------------------
 ## all data points and after highlight 5 species
 
-svglite::svglite(glue("figures/Fig2/data_fig2_date.svg"), 
-    width = 4, height = 4)
 
 
 library(data.table)
@@ -1033,19 +1031,14 @@ mod_gu_data$species <- mod_gu$model$species
 plot_smooth(mod_gu, view = "AnomDGr", cond=list(mig_cell=T),
             rug = F,lty = "dashed", transform = "exp", log = "y",
             col = "#E69F00", lwd = 3, rm.ranef = TRUE,
-            ylim = exp(c(3,5))) 
-
-mod_gu_data_COVI <- mod_gu_data %>% 
-                  filter(species == "Contopus_virens")
-
-points(x = mod_gu_data_COVI$AnomDGr, y = mod_gu_data_COVI$vArrMag, col = mod_gu_data_COVI$species)
+            ylim = exp(c(3.6,4.2))) 
 
 sps <- mod_gu_data  %>% 
         select(species) %>%
         distinct() %>% 
         pull()
 
-par(mfrow = c(11 ,5))
+par(mfrow = c(5 ,5))  #11,5
 for(i in 1:length(sps)){
   plot_smooth(mod_gu, view = "AnomDGr", cond=list(mig_cell=T),
             rug = F,lty = "dashed", transform = "exp", log = "y",
