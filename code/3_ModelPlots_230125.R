@@ -1017,7 +1017,8 @@ plot_smooth(mod_gu, view = "AnomDGr", cond=list(mig_cell=F),
 
 ## create a matrix with the data used in the model, the predictions, 
 mod_gu_data <- cbind(mod_gu$model$AnomDGr, mod_gu$model$AnomVGr,
-                      exp(mod_gu$model$`log(vArrMag)`), 
+                      #exp(mod_gu$model$`log(vArrMag)`), 
+                      exp(mod_gu$fitted.values),
                       mod_gu$model$mig_cell,
                       mod_gu$model$year,
                       mod_gu$model$cell_lat2,
@@ -1027,6 +1028,7 @@ colnames(mod_gu_data) <- c("AnomDGr", "AnomVGr", "vArrMag",
                           "cell_lat2", "sps_cell")
 mod_gu_data <- as_tibble(mod_gu_data)
 mod_gu_data$species <- mod_gu$model$species
+mod_gu_data$sps_cell <- mod_gu$model$sps_cell
 
 plot_smooth(mod_gu, view = "AnomDGr", cond=list(mig_cell=T),
             rug = F,lty = "dashed", transform = "exp", log = "y",
@@ -1038,22 +1040,125 @@ sps <- mod_gu_data  %>%
         distinct() %>% 
         pull()
 
-par(mfrow = c(5 ,5))  #11,5
+par(mfrow = c(2,1))  #11,5
 for(i in 1:length(sps)){
-  plot_smooth(mod_gu, view = "AnomDGr", cond=list(mig_cell=T),
-            rug = F,lty = "dashed", transform = "exp", log = "y",
-            col = "#E69F00", lwd = 3, rm.ranef = TRUE,
-            ylim = exp(c(3,5))) 
+  # plot_smooth(mod_gu, view = "AnomDGr", cond=list(mig_cell=T),
+  #           rug = F,lty = "dashed", transform = "exp", log = "y",
+  #           col = "#E69F00", lwd = 3, rm.ranef = TRUE,
+  #           ylim = exp(c(3,5))) 
 
-  mod_gu_data_COVI <- mod_gu_data %>% 
+  mod_gu_pred_COVI <- mod_gu_data %>% 
                   filter(species == sps[i])
+  sps_cell_loop <- mod_gu_pred_COVI %>% 
+                      select(sps_cell) %>% 
+                      pull() %>% 
+                      unique() %>% 
+                      as.character()
+  
+  plot_smooth(mod_gu, view = "AnomDGr", cond=list(mig_cell=T, 
+                                                  species = as.character(sps[i]),
+                                                  sps_cell = sps_cell_loop),
+            rug = F,lty = "dashed", transform = "exp", log = "y",
+            col = "#E69F00", lwd = 3, rm.ranef = TRUE#,
+            #ylim = exp(c(3,5))
+            ) 
 
-  points(x = mod_gu_data_COVI$AnomDGr, y = mod_gu_data_COVI$vArrMag, col = mod_gu_data_COVI$year)
+  mod_gu_data_COVI <- final2 %>% 
+                  filter(species == as.character(sps[i]))
+
+  points(x = mod_gu_pred_COVI$AnomDGr, y = mod_gu_pred_COVI$vArrMag, col = "red")
+  #points(x = mod_gu_data_COVI$AnomDGr, y = mod_gu_data_COVI$vArrMag, col = "black")
+
 }
+
+
+sps <- sort(unique(as.character(unlist(mod_gu$model$species))))
+for(i in 1:length(sps)){
+  #suppressWarnings({
+    #browser()
+    # prediction --------------------
+    excl1 <- c("AnomVGr", "year", "s(cell_lat2)", "sps_cell")
+    new_data1 <- data.frame(AnomDGr = seq(-20,20,1),
+                            AnomVGr = 1,
+                            mig_cell = as.factor(T))
+
+    new_data1$species <- sps[i]
+    new_data1$cell_lat2 <- 1
+    new_data1$sps_cell <- 1
+    new_data1$year <- 1
+
+    new_data1 <- new_data1 %>% distinct()
+
+    pred1 <- predict(mod_gu, new_data1, exclude = excl1,
+                      type = "link", se.fit = TRUE, unconditional = TRUE)
+
+    # test <- predict(mod_gu,
+    #                       newdata = new_data1,
+    #                       se.fit = TRUE, 
+    #                       iterms.type=2, 
+    #                       re.form=NA,
+    #                       exclude = list("s(year)","s(cell_lat2)","s(sps_cell)", "AnomVGr"))
+
+    speed_day_tab <- as.data.frame(matrix(ncol = 3,
+                                          data = c(pred1$fit, 
+                                                    pred1$fit + pred1$se.fit,
+                                                    pred1$fit - pred1$se.fit),
+                                          byrow = F)) 
+
+    colnames(speed_day_tab) <- c("mean", "up","low")
+    speed_day_tab_exp <- speed_day_tab %>% 
+      mutate(mean = exp(mean),
+            up = exp(up),
+            low = exp(low))
+    speed_day_tab_exp$AnomDGr <- new_data1$AnomDGr
+
+    # data points used
+    mod_gu_data <- cbind(mod_gu$model$species,
+                          exp(mod_gu$model$`log(vArrMag)`),
+                          mod_gu$model$AnomDGr) %>% 
+                    as_tibble() %>% 
+                    rename(species = V1, speed_dat = V2, AnomDGr = V3)
+    mod_gu_data$species <- unlist(mod_gu$model$species)
+    mod_gu_data <- mod_gu_data %>% 
+                    filter(species == sps[i])
+    
+
+    plotplot <- ggplot(aes(x = AnomDGr, y = mean), data = speed_day_tab_exp) +
+      scale_y_continuous(limits = c(0, 150)) + 
+      geom_errorbar(aes(ymin=low, ymax=up), width=.1,
+                    position=position_dodge(.9), data = speed_day_tab_exp) +
+      geom_line(aes(x = AnomDGr, y = mean), data = speed_day_tab_exp, size = 1) +
+      theme_bw() +
+      theme(panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            axis.line = element_line(colour = "black", size = 0.35),
+            panel.border = element_blank(),
+            panel.background = element_blank(),
+            axis.title.x = element_blank(),
+            axis.title.y = element_blank(),
+            axis.text.y = element_text(angle=90, hjust=0.5, size = 12, colour = "black"),
+            axis.text.x = element_text(size = 12, colour = "black"),
+            legend.position = "none",
+            axis.ticks.length = unit(0.3, "cm"),
+            axis.ticks = element_line(colour = "black", size = 0.35),
+            rect = element_rect(fill = "transparent")) +   
+      ggtitle(glue("{i}_{unique(new_data1$species)}")) +
+      geom_point(data = mod_gu_data  %>% 
+                          filter(speed_dat < 150),
+                  aes(x = AnomDGr, y = speed_dat), color = "magenta3")
+      print(plotplot)
+      rm(plotplot)
+      rm(mod_gu_data)
+      rm(speed_day_tab_exp)
+      rm(new_data1)
+      rm(pred1)
+  #})
+
+}
+
 
 ## plot data for sps 1,6,19,23,29,49
 
-dev.off()
 
 ## data points for figure 3b - speed and green-up speed (model 1) --------------------------------------------------------
 svglite::svglite(glue("figures/Fig2/fig2_speed.svg"), 
