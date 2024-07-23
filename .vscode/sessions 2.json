@@ -17,31 +17,6 @@
                 ]
             },
             {
-                "name": "HPCC",
-                "autoExecuteCommands": false,
-                "icon": "squirrel",
-                "color": "terminal.ansiRed",
-                "commands": [
-                    "ssh -XY bamaral@hpcc.msu.edu",
-                    ""
-                ]
-            },
-            {
-                "name": "Mapped",
-                "autoExecuteCommands": false,
-                "icon": "location",
-                "color": "terminal.ansiBrightGreen",
-                "commands": [
-                    "cd ..",
-                    "cd ..",
-                    "cd ..",
-                    "cd ..",
-                    "cd ..",
-                    "cd Volumes/bamaral",
-                    "echo Find your repo now!"
-                ]
-            },
-            {
                 "name": "R",
                 "autoExecuteCommands": false,
                 "icon": "run",

@@ -24,6 +24,7 @@ presentations
 .Rhistory
 .DS_Store
 figures copy/
+dryad/
 
 # extensions
 .csv

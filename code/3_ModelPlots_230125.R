@@ -524,7 +524,6 @@ newdata_m$cell_lat <- 1
 newdata_m$cell <- 1
 newdata_m$sps_cell <- 1
 
-
 yhat.inctr2 <- predict(mod_tra, newdata = newdata_m, se.fit = TRUE, iterms.type=2, newdata_m.guaranteed=TRUE,
                         #type=c("terms"),
                         exclude = list("s(year)","s(cell_lat)","s(sps_cell)", "s(cell)"
@@ -1071,6 +1070,8 @@ for(i in 1:length(sps)){
 
 }
 
+min(mod_gu$model$AnomDGr)
+max(mod_gu$model$AnomDGr)
 
 sps <- sort(unique(as.character(unlist(mod_gu$model$species))))
 for(i in 1:length(sps)){
@@ -1078,7 +1079,7 @@ for(i in 1:length(sps)){
     #browser()
     # prediction --------------------
     excl1 <- c("AnomVGr", "year", "s(cell_lat2)", "sps_cell")
-    new_data1 <- data.frame(AnomDGr = seq(-20,20,1),
+    new_data1 <- data.frame(AnomDGr = seq(-22,13,1),
                             AnomVGr = 1,
                             mig_cell = as.factor(T))
 
@@ -1115,19 +1116,20 @@ for(i in 1:length(sps)){
     # data points used
     mod_gu_data <- cbind(mod_gu$model$species,
                           exp(mod_gu$model$`log(vArrMag)`),
-                          mod_gu$model$AnomDGr) %>% 
+                          mod_gu$model$AnomDGr,
+                          mod_gu$model$year) %>% 
                     as_tibble() %>% 
-                    rename(species = V1, speed_dat = V2, AnomDGr = V3)
+                    rename(species = V1, speed_dat = V2, AnomDGr = V3, year = V4)
     mod_gu_data$species <- unlist(mod_gu$model$species)
     mod_gu_data <- mod_gu_data %>% 
                     filter(species == sps[i])
-    
+    library(wesanderson)
 
     plotplot <- ggplot(aes(x = AnomDGr, y = mean), data = speed_day_tab_exp) +
       scale_y_continuous(limits = c(0, 150)) + 
-      geom_errorbar(aes(ymin=low, ymax=up), width=.1,
+      geom_ribbon(aes(ymin=low, ymax=up), fill = "lightgray",
                     position=position_dodge(.9), data = speed_day_tab_exp) +
-      geom_line(aes(x = AnomDGr, y = mean), data = speed_day_tab_exp, size = 1) +
+      geom_line(aes(x = AnomDGr, y = mean), data = speed_day_tab_exp, linewidth = 1) +
       theme_bw() +
       theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
@@ -1145,7 +1147,10 @@ for(i in 1:length(sps)){
       ggtitle(glue("{i}_{unique(new_data1$species)}")) +
       geom_point(data = mod_gu_data  %>% 
                           filter(speed_dat < 150),
-                  aes(x = AnomDGr, y = speed_dat), color = "magenta3")
+                  aes(x = AnomDGr, y = speed_dat, color = year)#, color = "#d579d5"
+                  ) +
+      scale_color_gradientn(colours = rainbow(lenght(unique(mod_gu_data$year))))
+      
       print(plotplot)
       rm(plotplot)
       rm(mod_gu_data)
@@ -1156,8 +1161,98 @@ for(i in 1:length(sps)){
 
 }
 
+# GUP speed
 
-## plot data for sps 1,6,19,23,29,49
+min(mod_gu$model$AnomVGr)
+max(mod_gu$model$AnomVGr)
+
+for(i in 1:length(sps)){
+  #suppressWarnings({
+    #browser()
+    # prediction --------------------
+    excl1 <- c("AnomDGr", "year", "s(cell_lat2)", "sps_cell")
+    new_data1 <- data.frame(AnomVGr = seq(-1.1,1.1,0.1),
+                            AnomDGr = 1,
+                            mig_cell = as.factor(T))
+
+    new_data1$species <- sps[i]
+    new_data1$cell_lat2 <- 1
+    new_data1$sps_cell <- 1
+    new_data1$year <- 1
+
+    new_data1 <- new_data1 %>% distinct()
+
+    pred1 <- predict(mod_gu, new_data1, exclude = excl1,
+                      type = "link", se.fit = TRUE, unconditional = TRUE)
+
+    # test <- predict(mod_gu,
+    #                       newdata = new_data1,
+    #                       se.fit = TRUE, 
+    #                       iterms.type=2, 
+    #                       re.form=NA,
+    #                       exclude = list("s(year)","s(cell_lat2)","s(sps_cell)", "AnomVGr"))
+
+    speed_day_tab <- as.data.frame(matrix(ncol = 3,
+                                          data = c(pred1$fit, 
+                                                    pred1$fit + pred1$se.fit,
+                                                    pred1$fit - pred1$se.fit),
+                                          byrow = F)) 
+
+    colnames(speed_day_tab) <- c("mean", "up","low")
+    speed_day_tab_exp <- speed_day_tab %>% 
+      mutate(mean = exp(mean),
+            up = exp(up),
+            low = exp(low))
+    speed_day_tab_exp$AnomVGr <- new_data1$AnomVGr
+
+    # data points used
+    mod_gu_data <- cbind(mod_gu$model$species,
+                          exp(mod_gu$model$`log(vArrMag)`),
+                          mod_gu$model$AnomVGr,
+                          mod_gu$model$year) %>% 
+                    as_tibble() %>% 
+                    rename(species = V1, speed_dat = V2, AnomVGr = V3, year = V4)
+    mod_gu_data$species <- unlist(mod_gu$model$species)
+    mod_gu_data <- mod_gu_data %>% 
+                    filter(species == sps[i])
+    
+    plotplot <- ggplot(aes(x = AnomVGr, y = mean), data = speed_day_tab_exp) +
+      scale_y_continuous(limits = c(0, 150)) + 
+      scale_x_continuous(limits = c(-1.1, 1.1)) +  # Setting x-axis limits
+      geom_ribbon(aes(ymin=low, ymax=up), fill = "lightgray",
+                    position=position_dodge(.9), data = speed_day_tab_exp) +
+      geom_line(aes(x = AnomVGr, y = mean), data = speed_day_tab_exp, linewidth = 1) +
+      theme_bw() +
+      theme(panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            axis.line = element_line(colour = "black", size = 0.35),
+            panel.border = element_blank(),
+            panel.background = element_blank(),
+            axis.title.x = element_blank(),
+            axis.title.y = element_blank(),
+            axis.text.y = element_text(angle=90, hjust=0.5, size = 12, colour = "black"),
+            axis.text.x = element_text(size = 12, colour = "black"),
+            legend.position = "none",
+            axis.ticks.length = unit(0.3, "cm"),
+            axis.ticks = element_line(colour = "black", size = 0.35),
+            rect = element_rect(fill = "transparent")) +   
+      ggtitle(glue("{i}_{unique(new_data1$species)}")) +
+      geom_point(data = mod_gu_data  %>% 
+                          filter(speed_dat < 150),
+                  aes(x = AnomVGr, y = speed_dat, color = year)#, color = "#d579d5"
+                  ) +
+      scale_color_gradientn(colours = rainbow(length(unique(mod_gu_data$year))))
+      
+      print(plotplot)
+      rm(plotplot)
+      rm(mod_gu_data)
+      rm(speed_day_tab_exp)
+      rm(new_data1)
+      rm(pred1)
+  #})
+
+}
+
 
 
 ## data points for figure 3b - speed and green-up speed (model 1) --------------------------------------------------------
