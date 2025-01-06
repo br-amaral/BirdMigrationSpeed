@@ -26,12 +26,15 @@ library(lme4)
 library(mgcv)
 
 # import data ---------------------------
-## file paths
-BIRD_SPEED_PATH <- "data/birdgreen.rds"
-GUP_SPEED_PATH  <- "data/velocityG.rds"
+# define maximum speed threshold
+spe_thres <- 3000
 
-CELL_COOR_PATH <- "data/cellcoor.rds"
-CELL_NUMB_PATH <- "data/cellnumbs.rds"
+## file paths
+BIRD_SPEED_PATH <- "data/birdgreen_st{spe_thres}.rds"
+GUP_SPEED_PATH  <- "data/velocityG_st{spe_thres}.rds"
+
+CELL_COOR_PATH <- "data/cellcoor_st{spe_thres}.rds"
+CELL_NUMB_PATH <- "data/cellnumbs_st{spe_thres}.rds"
 
 TRAIT_OVER_PATH <- "data/source/traits/Table_S1.csv"
 TRAIT_SENS_PATH <- "data/source/traits/data_sensi.rds"
