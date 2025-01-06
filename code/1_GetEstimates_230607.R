@@ -301,14 +301,14 @@ final2 <- final %>%
 
 # save output tibbles to run models
 ## velocities of bird and green up
-write_rds(velocityB, file = "data/velocityB.rds")
-write_rds(velocityG, file = "data/velocityG.rds")
+#write_rds(velocityB, file = "data/velocityB.rds")
+#write_rds(velocityG, file = "data/velocityG.rds")
 ## files with the coordinates for the velocity vectors for the map (all years together)
-write_rds(predsB, file = "data/cellaveB.rds")
-write_rds(predsG, file = "data/cellaveG.rds")
+#write_rds(predsB, file = "data/cellaveB.rds")
+#write_rds(predsG, file = "data/cellaveG.rds")
 ## bird and green up velocity merged
-write_rds(final2, file = "data/birdgreen.rds")
-write_rds(cells %>% dplyr::select(cell, cell_lat, cell_lng), file = "data/cellcoor.rds")
-write_rds(cellnumbs, file = "data/cellnumbs.rds")
-write_rds(cells, file = "data/cellnei.rds")
+#write_rds(final2, file = "data/birdgreen.rds")
+#write_rds(cells %>% dplyr::select(cell, cell_lat, cell_lng), file = "data/cellcoor.rds")
+#write_rds(cellnumbs, file = "data/cellnumbs.rds")
+#write_rds(cells, file = "data/cellnei.rds")
 

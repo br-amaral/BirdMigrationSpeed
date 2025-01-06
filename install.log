@@ -1,0 +1,9 @@
+[14:07:02 2024-12-23] FETCHING Version 2.38.7
+[14:07:02 2024-12-23] CREATING /Users/brunarodriguesdoamaral/.spicetify
+[14:07:02 2024-12-23] DOWNLOADING https://github.com/spicetify/cli/releases/download/v2.38.7/spicetify-2.38.7-darwin-amd64.tar.gz
+[14:07:03 2024-12-23] EXTRACTING /Users/brunarodriguesdoamaral/.spicetify/spicetify.tar.gz
+[14:07:03 2024-12-23] SETTING EXECUTABLE PERMISSIONS TO /Users/brunarodriguesdoamaral/.spicetify/spicetify
+[14:07:03 2024-12-23] REMOVING /Users/brunarodriguesdoamaral/.spicetify/spicetify.tar.gz
+[14:07:03 2024-12-23] APPENDING /Users/brunarodriguesdoamaral/.spicetify to PATH in /Users/brunarodriguesdoamaral/.zshrc
+[14:07:03 2024-12-23] spicetify v2.38.7 was installed successfully to /Users/brunarodriguesdoamaral/.spicetify
+[14:07:03 2024-12-23] Run 'spicetify --help' to get started
