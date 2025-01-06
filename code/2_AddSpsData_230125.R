@@ -27,14 +27,14 @@ library(mgcv)
 
 # import data ---------------------------
 # define maximum speed threshold
-spe_thres <- 3000
+spe_thres <- 4000
 
 ## file paths
-BIRD_SPEED_PATH <- "data/birdgreen_st{spe_thres}.rds"
-GUP_SPEED_PATH  <- "data/velocityG_st{spe_thres}.rds"
+BIRD_SPEED_PATH <- glue("data/birdgreen_st{spe_thres}.rds")
+GUP_SPEED_PATH  <- glue("data/velocityG_st{spe_thres}.rds")
 
-CELL_COOR_PATH <- "data/cellcoor_st{spe_thres}.rds"
-CELL_NUMB_PATH <- "data/cellnumbs_st{spe_thres}.rds"
+CELL_COOR_PATH <- glue("data/cellcoor_st{spe_thres}.rds")
+CELL_NUMB_PATH <- glue("data/cellnumbs_st{spe_thres}.rds")
 
 TRAIT_OVER_PATH <- "data/source/traits/Table_S1.csv"
 TRAIT_SENS_PATH <- "data/source/traits/data_sensi.rds"
@@ -205,10 +205,10 @@ final <- left_join(final, ea_tab_ano, by = c("species", "year"))
 dim(final) ; dim(final)[1] == dimfinal ;  tail(colnames(final))
 
 
-## remove rows with bird speed greater than 3000
+## remove rows with bird speed greater than spe_thres
 for(i in 1:nrow(final)){
   if(is.na(final$vArrMag[i])) {final$vArrMag[i]
-  } else {if(final$vArrMag[i] > 3000) {final$vArrMag[i] <- NA}}
+  } else {if(final$vArrMag[i] > spe_thres) {final$vArrMag[i] <- NA}}
 }
 
-saveRDS(final, file = "data/final2_2.rds")
+write_rds(final, file = "data/final_st{spe_thres}.rds")
