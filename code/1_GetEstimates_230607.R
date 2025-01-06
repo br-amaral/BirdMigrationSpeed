@@ -37,6 +37,8 @@ bird1 <- bird1[,-1]  ## remove weird first column
 greenup1 <- read_csv(GREENDATA_PATH) %>% 
   filter(gr_ncell > 10000)
 greenup1 <- greenup1[,-1]
+# define maximum speed threshold
+spe_thres <- 3000
 
 # cell number in a sequence that starts at 1
 tc <- sort(unique(greenup1$cell))
@@ -266,13 +268,13 @@ all <- all %>%
 
 for(i in 1:nrow(all)){
   if(!is.na(all$vArrMag[i])) {
-    if(all$vArrMag[i] > 3000) {all$vArrMag[i] <- NA}
+    if(all$vArrMag[i] > spe_thres) {all$vArrMag[i] <- NA}
   }
 }
 
 for(i in 1:nrow(all)){
   if(!is.na(all$vGrMag[i])) {
-    if(all$vGrMag[i] > 3000) {all$vGrMag[i] <- NA}
+    if(all$vGrMag[i] > spe_thres) {all$vGrMag[i] <- NA}
   }
 }
 cellspec <- unique(all[ ,c("cell","species")])
@@ -301,14 +303,15 @@ final2 <- final %>%
 
 # save output tibbles to run models
 ## velocities of bird and green up
-#write_rds(velocityB, file = "data/velocityB.rds")
-#write_rds(velocityG, file = "data/velocityG.rds")
+write_rds(velocityB, file = glue("data/velocityB_st{spe_thres}.rds"))
+write_rds(velocityG, file = glue("data/velocityG_st{spe_thres}.rds"))
 ## files with the coordinates for the velocity vectors for the map (all years together)
-#write_rds(predsB, file = "data/cellaveB.rds")
-#write_rds(predsG, file = "data/cellaveG.rds")
+write_rds(predsB, file = glue("data/cellaveB_st{spe_thres}.rds"))
+write_rds(predsG, file = glue("data/cellaveG_st{spe_thres}.rds"))
 ## bird and green up velocity merged
-#write_rds(final2, file = "data/birdgreen.rds")
-#write_rds(cells %>% dplyr::select(cell, cell_lat, cell_lng), file = "data/cellcoor.rds")
-#write_rds(cellnumbs, file = "data/cellnumbs.rds")
-#write_rds(cells, file = "data/cellnei.rds")
+write_rds(final2, file = glue("data/birdgreen_st{spe_thres}.rds"))
+write_rds(cells %>% dplyr::select(cell, cell_lat, cell_lng), 
+          file = glue("data/cellcoor_st{spe_thres}.rds"))
+write_rds(cellnumbs, file = glue("data/cellnumbs_st{spe_thres}.rds"))
+write_rds(cells, file = glue("data/cellnei_st{spe_thres}.rds"))
 
