@@ -59,10 +59,12 @@ lenght <- length
 # Source code -----------------------------------------
 #
 # Import data -----------------------------------------
+# define maximum speed threshold
+spe_thres <- 4000
 ## file paths
-CELL_NUMB_PATH <- "data/cellnumbs.rds"
-CELL_COOR_PATH <- "data/cellcoor.rds"
-FINAL_DATA_PATH <- "data/final.rds"
+CELL_NUMB_PATH <- glue("data/cellnumbs_st{spe_thres}.rds")
+CELL_COOR_PATH <- glue("data/cellcoor_st{spe_thres}.rds")
+FINAL_DATA_PATH <- glue("data/final_st{spe_thres}.rds")
 ## read files
 
 # Color-blind friendly colors:
@@ -101,6 +103,8 @@ mod_gu <-
               s(sps_cell, bs = "re") + 
               s(species, bs = "re")
   ) 
+
+write_rds(mod_gu, file = glue("data/mod_gu_st{spe_thres}.rds"))
 
 summary(mod_gu)
 
@@ -758,7 +762,7 @@ final_lag1 <- final2 %>%
 spslist <- sort(unique(final_lag1$species))
 
 final_lag5 <- as.data.frame(matrix(NA, ncol = 4, nrow = 0))
-
+counter <- 0
 ## get species past speed
 for(s in 1:length(spslist)){
   final_lag2 <- final_lag1 %>% filter(species == spslist[s])
@@ -773,10 +777,13 @@ for(s in 1:length(spslist)){
       final_lag4 <- final_lag3 %>% filter(cell == cellsLoop[d])
       date2 <- final_lag4 %>% dplyr::select(arr_GAM_mean) %>% pull()
       place2 <- final_lag4 %>% dplyr::select(cell_lat2, cell_lng) %>% filter(row_number()==1)
-      spe_bef <- (geodist::geodist(c(place2[1,2], place2[1,1]), c(place[1,2], place[1,1]), measure = 'geodesic' )/1000)/
-        (date2 - date)
+      colnames(place2) <- colnames(place) <- c('latitude', 'longitude')
+      spe_bef <- (geodist::geodist(c(place2[1,2], place2[1,1]), c(place[1,2], place[1,1]), 
+                  measure = 'geodesic' )/1000)/(date2 - date)
       if(spe_bef > 0) {final_lag5 <- rbind(final_lag5,
-                                            cbind(as.data.frame(spslist[s]), years[y], cellsLoop[d], spe_bef))} else {print("upa")}
+                                            cbind(as.data.frame(spslist[s]), years[y], cellsLoop[d], spe_bef))
+                                            } else {print(glue("upa s <- {s}; y <-{y}; d <- {d}"))}
+      counter <- counter + 1
     }
   }
 }
@@ -793,7 +800,8 @@ final3 <- matrix(NA, 0, (ncol(final_lag) + 3))
 
 ## scale past speed, green-up day and sps arrival date
 for (a in 1:nrow(cellspec)){  # loop in a cell and species
-  dat.temp <- subset(final_lag, cellspec[a,1] == cell & cellspec[a,2] == species)
+  dat.temp <- final_lag %>% filter(cell == pull(cellspec[a,1]),
+                                   species == pull(cellspec[a,2]))
   if (nrow(dat.temp) >= 8){  # at least 8 years of data
     Anom <- apply(dat.temp[,c("past_spe","ea_lat_yr","gr_mn")], 2, 
                   function(x) scale(x, scale = T))
@@ -810,7 +818,7 @@ cor(final3$gr_mn_z, final3$ea_lat_yr_z, use = "na.or.complete")
 mod_lag <- 
   mgcv::gam(data = final3, 
             AnomLag ~ past_spe_z + ea_lat_yr_z + gr_mn_z + 
-              s(cell, bs = "re") +
+              s(species, bs = "re") +
               s(sps_cell, bs = "re")
   ) 
 

@@ -16,6 +16,8 @@
 #          data/cellnumbs.rds : 
 #          data/cellnei.rds : 
 
+freshr::freshr()
+
 # load packages --------------------------
 library(glue)
 library(tidyverse)
@@ -37,6 +39,7 @@ bird1 <- bird1[,-1]  ## remove weird first column
 greenup1 <- read_csv(GREENDATA_PATH) %>% 
   filter(gr_ncell > 10000)
 greenup1 <- greenup1[,-1]
+
 # define maximum speed threshold
 spe_thres <- 3000
 
@@ -96,7 +99,8 @@ for (yr in min(bird$year):max(bird$year)){
                                yr,
                                as.numeric(cells[b,1]),
                                sum(!is.na(dat.lm$arr_GAM_mean)),
-                               as.numeric(sqrt((1/coef[1])^2+(1/coef[2])^2)),  # magnitude
+                               #as.numeric(sqrt((1/coef[1])^2+(1/coef[2])^2)),  # magnitude
+                               as.numeric(1/sqrt(sum(coef^2))),
                                as.numeric(angle))                              # angle
             )
           }
@@ -187,7 +191,8 @@ for(a in min(bird$year):max(bird$year)){
                            c(a,
                              as.numeric(cells[b,1]),
                              as.numeric(sum(!is.na(dat.lm$gr_mn))),
-                             as.numeric(sqrt((1/coef[1])^2+(1/coef[2])^2)),
+                             #as.numeric(sqrt((1/coef[1])^2+(1/coef[2])^2)),
+                             as.numeric(1/sqrt(sum(coef^2))),
                              as.numeric(angle)))
       }
     }
@@ -299,8 +304,8 @@ final2 <- final %>%
   as_tibble() %>% 
   mutate(
     cell_lat2 = cell_lat,
-    cell_lat = scale(cell_lat, scale = FALSE))  # centering lat for regression analysis
-
+    cell_lat = as.numeric(scale(cell_lat, scale = FALSE))  # centering lat for regression analysis
+  )
 # save output tibbles to run models
 ## velocities of bird and green up
 write_rds(velocityB, file = glue("data/velocityB_st{spe_thres}.rds"))
