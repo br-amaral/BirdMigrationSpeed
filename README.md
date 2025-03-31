@@ -192,7 +192,7 @@ data/res/mod_lat_guspe.rds: model two results
 
 data/res/mod_tra.rds: model three results
 
-Figures
+Figures - NEED TO UPDATE
 
 figure 1 - maps of migration speed
 
