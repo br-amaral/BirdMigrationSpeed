@@ -1,0 +1,150 @@
+﻿CommonName,species,Order,Family,Body_mass_g,Radar ,Distance_m
+Ruby-throated Hummingbird,Archilochus_colubris      ,Caprimulgiformes,Trochilidae,4,NA,1530.815
+Blue-gray Gnatcatcher,Polioptila_caerulea,Passeriformes,Polioptilidae,5.8,3.42,874.07
+Ruby-crowned Kinglet,Regulus_calendula,Passeriformes,Reguliidae,6.19,3.58,2147.39
+Golden-crowned Kinglet,Regulus_satrapa,Passeriformes,Reguliidae,6.19,3.58,897.38
+Wilson's Warbler,Cardellina_pusilla,Passeriformes,Parulidae,6.96,3.89,4126.97
+Prairie Warbler,Setophaga_discolor,Passeriformes,Parulidae,7.64,4.15,1707.48
+Northern Parula,Setophaga_americana,Passeriformes,Parulidae,7.84,4.22,2223.26
+Nashville Warbler,Oreothlypis_ruficapilla,Passeriformes,Parulidae,8.09,4.32,2910.16
+Brown Creeper,Certhia_americana,Passeriformes,Certhiidae,8.1,4.32,307.14
+Magnolia Warbler,Setophaga_magnolia,Passeriformes,Parulidae,8.14,4.33,3761.23
+American Redstart,Setophaga_ruticilla,Passeriformes,Parulidae,8.24,4.37,4273.52
+Bell's Vireo,Vireo_bellii,Passeriformes,Vireonidae,8.5,4.47,1537.93
+Black-throated Green Warbler,Setophaga_virens,Passeriformes,Parulidae,8.69,4.54,3533.23
+Golden-winged Warbler,Vermivora_chrysoptera,Passeriformes,Parulidae,8.74,4.56,3694.59
+Tennessee Warbler,Oreothlypis_peregrina,Passeriformes,Parulidae,8.9,4.61,4933.77
+Blue-winged Warbler,Vermivora_cyanoptera,Passeriformes,Parulidae,8.9,4.61,2397.49
+Sedge Wren,Cistothorus_platensis,Passeriformes,Troglodytidae,9.04,4.66,1762.92
+Cerulean Warbler,Setophaga_cerulea,Passeriformes,Parulidae,9.04,4.66,4447.57
+Orange-crowned Warbler,Oreothlypis_celata,Passeriformes,Parulidae,9.19,4.72,3032.41
+Chestnut-sided Warbler,Setophaga_pensylvanica,Passeriformes,Parulidae,9.29,4.75,3625.82
+Common Yellowthroat,Geothlypis_trichas,Passeriformes,Parulidae,9.54,4.84,2218.58
+Yellow-throated Warbler,Setophaga_dominica,Passeriformes,Parulidae,9.69,4.9,1539.28
+Blackburnian Warbler,Setophaga_fusca,Passeriformes,Parulidae,9.74,4.91,4892.78
+Winter Wren,Troglodytes_hiemalis,Passeriformes,Troglodytidae,9.74,4.91,1568.81
+Least Flycatcher,Empidonax_minimus,Passeriformes,Tyrannidae,10,5.01,3695.72
+Canada Warbler,Cardellina_canadensis,Passeriformes,Parulidae,10.04,5.02,5201.67
+Cape May Warbler,Setophaga_tigrina,Passeriformes,Parulidae,10.04,5.02,4256.29
+Black-throated Blue Warbler,Setophaga_caerulescens,Passeriformes,Parulidae,10.14,5.05,2870.16
+Yellow Warbler,Setophaga_petechia,Passeriformes,Parulidae,10.22,5.08,4526.24
+Palm Warbler,Setophaga_palmarum,Passeriformes,Parulidae,10.3,5.11,3184.52
+Hooded Warbler,Setophaga_citrina,Passeriformes,Parulidae,10.54,5.19,2002.12
+Marsh Wren,Cistothorus_palustris,Passeriformes,Troglodytidae,10.8,5.28,1269.38
+House Wren,Troglodytes_aedon,Passeriformes,Troglodytidae,10.85,5.3,1230.33
+Black-and-white Warbler,Mniotilta_varia,Passeriformes,Parulidae,10.9,5.32,3287.12
+Clay-colored Sparrow,Spizella_pallida,Passeriformes,Emberizidae,11.2,5.42,2973.18
+White-eyed Vireo,Vireo_griseus,Passeriformes,Vireonidae,11.4,5.49,1070.06
+Philadelphia Vireo,Vireo_philadelphicus,Passeriformes,Vireonidae,11.5,5.52,4134.46
+Mourning Warbler,Geothlypis_philadelphia,Passeriformes,Parulidae,11.74,5.6,4763.49
+Pine Warbler,Setophaga_pinus,Passeriformes,Parulidae,11.79,5.62,769.2
+Yellow-bellied Flycatcher,Empidonax_flaviventris,Passeriformes,Tyrannidae,11.8,5.62,4062.96
+Bay-breasted Warbler,Setophaga_castanea,Passeriformes,Parulidae,11.8,5.62,4508.74
+Blackpoll Warbler,Setophaga_striata,Passeriformes,Parulidae,11.84,5.63,7024.93
+Yellow-rumped Warbler,Setophaga_coronata,Passeriformes,Parulidae,11.94,5.67,2954.13
+Chipping Sparrow,Spizella_passerina,Passeriformes,Emberizidae,12.2,5.75,1883.36
+Field Sparrow,Spizella_pusilla,Passeriformes,Emberizidae,12.5,5.85,507.09
+Acadian Flycatcher,Empidonax_virescens,Passeriformes,Tyrannidae,12.6,5.88,3513.48
+Warbling Vireo,Vireo_gilvus,Passeriformes,Vireonidae,12.67,5.91,2762.18
+Alder Flycatcher,Empidonax_alnorum,Passeriformes,Tyrannidae,12.7,5.92,7187.98
+Henslow's Sparrow,Centronyx_henslowii,Passeriformes,Emberizidae,12.8,5.95,1087
+Le Conte's Sparrow,Ammospiza_leconteii,Passeriformes,Emberizidae,13,6.01,2266.17
+Connecticut Warbler,Oporornis_agilis,Passeriformes,Parulidae,13.3,6.11,6570.17
+Willow Flycatcher,Empidonax_traillii,Passeriformes,Tyrannidae,13.39,6.14,4267.02
+Eastern Wood-Pewee,Contopus_virens,Passeriformes,Tyrannidae,13.9,6.3,4899.47
+Kentucky Warbler,Geothlypis_formosa,Passeriformes,Parulidae,14,6.33,2340.57
+Northern Rough-winged Swallow,Stelgidopteryx_serripennis,Passeriformes,Hirundinidae,14,NA,NA
+Worm-eating Warbler,Helmitheros_vermivorum,Passeriformes,Parulidae,14.16,6.38,2089.97
+Prothonotary Warbler,Protonotaria_citrea,Passeriformes,Parulidae,14.3,6.43,2636.7
+Indigo Bunting,Passerina_cyanea,Passeriformes,Emberizidae,14.69,6.55,2355.7
+Nelson's Sparrow,Ammospiza_nelsoni,Passeriformes,Emberizidae,15.11,6.68,2357.9
+Blue-headed Vireo,Vireo_solitarius,Passeriformes,Vireonidae,15.3,6.74,2721.66
+Painted Bunting,Passerina_ciris,Passeriformes,Emberizidae,15.54,6.81,1681.98
+Red-eyed Vireo,Vireo_olivaceus,Passeriformes,Vireonidae,16.06,6.97,2688.07
+Swamp Sparrow,Melospiza_georgiana,Passeriformes,Emberizidae,16.1,6.98,1940.43
+Northern Waterthrush,Parkesia_noveboracensis,Passeriformes,Parulidae,16.3,7.05,4953.04
+Lincoln's Sparrow,Melospiza_lincolnii,Passeriformes,Emberizidae,16.6,7.14,2657.3
+Grasshopper Sparrow,Ammodramus_savannarum,Passeriformes,Emberizidae,17.61,7.44,1487.75
+Yellow-throated Vireo,Vireo_flavifrons,Passeriformes,Vireonidae,18,7.55,2772.73
+Barn swallow,Hirundo_rustica           ,Passeriformes,Hirundinidae,18.5,NA,6918
+Ovenbird,Seiurus_aurocapilla,Passeriformes,Parulidae,18.8,7.79,3157.95
+Swainson's Warbler,Limnothlypis_swainsonii,Passeriformes,Parulidae,18.9,7.81,1508.76
+Saltmarsh Sparrow,Ammodramus_savannarum,Passeriformes,Emberizidae,19.19,7.9,1487.75
+Orchard Oriole,Icterus_spurius,Passeriformes,Icteridae,19.44,7.97,2596.97
+Eastern Phoebe,Sayornis_phoebe,Passeriformes,Tyrannidae,19.7,8.04,1805.94
+Louisiana Waterthrush,Parkesia_motacilla,Passeriformes,Parulidae,19.9,8.1,2460.01
+Savannah Sparrow,Passerculus_sandwichensis,Passeriformes,Emberizidae,19.97,8.12,2529.23
+Tree Swallow,Tachycineta_bicolor       ,Passeriformes,Hirundinidae,20.5,NA,2930
+Song Sparrow,Melospiza_melodia,Passeriformes,Emberizidae,21.91,8.66,830.87
+Seaside Sparrow,Ammodramus_savannarum,Passeriformes,Emberizidae,22.16,8.73,1487.75
+Least Sandpiper,Calidris_minutilla,Charadriiformes,Scolopacidae,22.88,8.93,6193.25
+Hooded Oriole,Icterus_cucullatus,Passeriformes,Icteridae,24.3,9.32,1185.49
+White-throated Sparrow,Zonotrichia_albicollis,Passeriformes,Emberizidae,24.4,9.34,1880.47
+Yellow-breasted Chat,Icteria_virens,Passeriformes,Parulidae,24.89,9.47,2577.16
+Vesper Sparrow,Pooecetes_gramineus,Passeriformes,Emberizidae,25.68,9.68,1761.53
+Dickcissel,Spiza_americana,Passeriformes,Cardinalidae,26.18,9.81,3811.9
+Cliff Swallow,Petrochelidon_pyrrhonota  ,Passeriformes,Hirundinidae,26.5,NA,8000
+Blue Grosbeak,Passerina_caerulea,Passeriformes,Emberizidae,27.39,10.13,1710.44
+Semipalmated Sandpiper,Calidris_pusilla,Charadriiformes,Scolopacidae,27.5,10.16,7334.72
+Western Sandpiper,Calidris_mauri,Charadriiformes,Scolopacidae,27.82,10.24,6992.98
+Lapland Longspur,Calcarius_lapponicus,Passeriformes,Emberizidae,27.84,10.25,2823.38
+White-crowned Sparrow,Zonotrichia_leucophrys,Passeriformes,Emberizidae,28,10.29,2448.02
+Ash-throated Flycatcher,Myiarchus_cinerascens,Passeriformes,Tyrannidae,28.2,10.34,1326.96
+Scarlet Tanager,Piranga_olivacea,Passeriformes,Cardinalidae,28.2,10.34,4822.05
+Lark Sparrow,Chondestes_grammacus,Passeriformes,Emberizidae,29,10.54,1160.54
+Summer Tanager,Piranga_rubra,Passeriformes,Cardinalidae,29.13,10.58,3408.18
+Hermit Thrush,Catharus_guttatus,Passeriformes,Turdidae,30.1,10.82,2119.69
+Swainson's Thrush,Catharus_ustulatus,Passeriformes,Turdidae,30.3,10.87,4835.9
+Bobolink,Dolichonyx_oryzivorus,Passeriformes,Icteridae,31.46,11.16,8059.33
+Cedar Waxwing,Bombycilla_cedrorum,Passeriformes,Bombycillidae,31.58,11.19,1467.94
+Gray-cheeked Thrush,Catharus_minimus,Passeriformes,Turdidae,31.58,11.19,7638.57
+Veery,Catharus_fuscescens,Passeriformes,Turdidae,31.9,11.27,7846.94
+Olive-sided Flycatcher,Contopus_cooperi,Passeriformes,Tyrannidae,32.1,11.32,7045.33
+Great Crested Flycatcher,Myiarchus_crinitus,Passeriformes,Tyrannidae,32.1,11.32,3043.36
+Baltimore Oriole,Icterus_galbula,Passeriformes,Icteridae,32.83,11.5,3039.17
+Fox Sparrow,Passerella_iliaca,Passeriformes,Emberizidae,33.25,11.6,3236.94
+Gray Catbird,Dumetella_carolinensis,Passeriformes,Mimidae,35.3,12.1,2304.75
+Harris's Sparrow,Zonotrichia_querula,Passeriformes,Emberizidae,35.5,12.14,3181.28
+Bullock's Oriole,Icterus_bullockii,Passeriformes,Icteridae,37.9,12.71,2193.32
+Scissor-tailed Flycatcher,Tyrannus_forficatus,Passeriformes,Tyrannidae,39.3,13.04,2235.76
+Western Kingbird,Tyrannus_verticalis,Passeriformes,Tyrannidae,39.6,13.11,3110.21
+Eastern Kingbird,Tyrannus_tyrannus,Passeriformes,Tyrannidae,39.85,13.17,7082.38
+Baird's Sandpiper,Calidris_bairdii,Charadriiformes,Scolopacidae,40.97,13.42,11776.26
+Rose-breasted Grosbeak,Pheucticus_ludovicianus,Passeriformes,Cardinalidae,42,13.66,3873.19
+Eastern Towhee,Pipilo_erythrophthalmus   ,Passeriformes,Passerellidae,42,NA,NA
+Wood Thrush,Hylocichla_mustelina,Passeriformes,Turdidae,50.09,15.45,2821.42
+Yellow-bellied Sapsucker,Sphyrapicus_varius,Piciformes,Picidae,50.3,15.5,2844.64
+Black-billed Cuckoo,Coccyzus_erythropthalmus,Cuculiformes,Cuculidae,50.9,15.63,5673.94
+Dunlin,Calidris_alpina,Charadriiformes,Scolopacidae,51.89,15.84,3375.6
+Eastern Whip-poor-will,Antrostomus_vociferus,Caprimulgiformes,Caprimulgidae,53.3,16.14,2656.17
+Wilson's Phalarope,Steganopus_tricolor,Charadriiformes,Scolopacidae,59.39,17.41,9488.91
+Yellow-billed Cuckoo,Coccyzus_americanus,Cuculiformes,Cuculidae,64,18.34,5999.37
+Brown Thrasher,Toxostoma_rufum,Passeriformes,Mimidae,68.8,19.29,959.67
+Red-headed Woodpecker,Melanerpes_erythrocephalus,Piciformes,Picidae,71.6,19.84,504.94
+Long-billed Dowitcher,Limnodromus_scolopaceus,Charadriiformes,Scolopacidae,104.4,25.83,5819.56
+Chuck-will s-widow,Antrostomus_carolinensis,Caprimulgiformes,Caprimulgidae,109,26.62,2011.37
+Northern Flicker,Colaptes_auratus,Piciformes,Picidae,131.46,30.34,1451.01
+Red Knot,Calidris_canutus,Charadriiformes,Scolopacidae,141.87,32.01,7997.91
+American Golden-Plover,Pluvialis_dominica,Charadriiformes,Charadriidae,151.47,33.51,11956.14
+Upland Sandpiper,Bartramia_longicauda,Charadriiformes,Scolopacidae,158.92,34.65,9330.97
+Greater Yellowlegs,Tringa_melanoleuca,Charadriiformes,Scolopacidae,161.74,35.08,7507.96
+American Woodcock,Scolopax_minor,Charadriiformes,Scolopacidae,196.32,40.17,981.97
+Willet,Tringa_semipalmata,Charadriiformes,Scolopacidae,245.7,47,3451.52
+Black-bellied Plover,Pluvialis_squatarola,Charadriiformes,Charadriidae,250,47.57,6733.63
+Hudsonian Godwit,Limosa_haemastica,Charadriiformes,Scolopacidae,253.29,48.01,12884.09
+American Avocet,Recurvirostra_americana,Charadriiformes,Recurvirostridae,304.48,54.6,1776.25
+Green-winged Teal,Anas_crecca,Anseriformes,Anatidae,341.89,59.21,2199.9
+Marbled Godwit,Limosa_fedoa,Charadriiformes,Scolopacidae,357.02,61.04,2492.19
+Blue-winged Teal,Spatula_discors,Anseriformes,Anatidae,359.44,61.32,3672.42
+Cinnamon Teal,Spatula_cyanoptera,Anseriformes,Anatidae,377.45,63.46,1543.71
+Bufflehead,Bucephala_albeola,Anseriformes,Anatidae,397.46,65.79,2218.87
+Long-billed Curlew,Numenius_americanus,Charadriiformes,Scolopacidae,583.86,86.1,1971.54
+Ruddy Duck,Oxyura_jamaicensis,Anseriformes,Anatidae,608.15,88.59,1214.89
+Northern Shoveler,Spatula_clypeata,Anseriformes,Anatidae,612.56,89.04,3392.15
+Ring-necked Duck,Aythya_collaris,Anseriformes,Anatidae,704.55,98.19,2168.7
+American Wigeon,Mareca_americana,Anseriformes,Anatidae,754.61,103.02,3051.58
+Lesser Scaup,Aythya_affinis,Anseriformes,Anatidae,819.45,109.14,3492.69
+Northern Pintail,Anas_acuta,Anseriformes,Anatidae,944.62,120.55,3231.63
+Canvasback,Aythya_valisineria,Anseriformes,Anatidae,1202,142.68,2779.59
+Ross's Goose,Anser_rossii,Anseriformes,Anatidae,1635.99,177.01,3312.73
+Greater White-fronted Goose,Anser_albifrons,Anseriformes,Anatidae,2506.39,238.56,4364.25
