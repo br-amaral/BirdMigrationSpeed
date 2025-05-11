@@ -56,32 +56,29 @@ colanmes <- colnames
 lenght <- length
 `%!in%` <- Negate(`%in%`)
 #
-# Source code -----------------------------------------
-#
-# Import data -----------------------------------------
-# define maximum speed threshold
-spe_thres <- 4000
-## file paths
-CELL_NUMB_PATH <- glue("data/cellnumbs_st{spe_thres}.rds")
-CELL_COOR_PATH <- glue("data/cellcoor_st{spe_thres}.rds")
-FINAL_DATA_PATH <- glue("data/final_st{spe_thres}.rds")
-## read files
-
 # Color-blind friendly colors:
 # Green-up: #009E73 (green)
 # Bird: #CC79A7 (pink)
 # Migratory range: #E69F00 (orange)
 # Breeding range: #F0E442 (yellow)
+# Source code -----------------------------------------
+#
+# Import data -----------------------------------------
+# define maximum speed threshold
+spe_thres <- 3000
+## file paths
+CELL_NUMB_PATH <- glue("data/cellnumbs_st{spe_thres}.rds")
+CELL_COOR_PATH <- glue("data/cellcoor_st{spe_thres}.rds")
+FINAL_DATA_PATH <- glue("data/final_st{spe_thres}.rds")
+# FINAL_DATA_PATH <- glue("data/final copy.rds")
 
-# load data
-cellnumbs <- readRDS(file = CELL_NUMB_PATH)
-cells <- readRDS(file = CELL_COOR_PATH)
+## read files and load data
+cellnumbs <- read_rds(file = CELL_NUMB_PATH)
+cells <- read_rds(file = CELL_COOR_PATH)
 
 #final2 <- readRDS("data/final2_2.rds") %>% 
-final2 <- readRDS(FINAL_DATA_PATH) %>% 
-  #readRDS("~/OneDrive/BirdMigrationSpeed_copy/final.rds") %>% 
-  #"~/Library/CloudStorage/OneDrive-ThePennsylvaniaStateUniversity/BirdMigrationSpeed_copy/data/final.rds") %>% 
-  mutate( species = as.factor(species), 
+final2 <- read_rds(FINAL_DATA_PATH) %>% 
+   mutate(species = as.factor(species), 
           cell = as.factor(cell),
           #mig_cell = abs(mig_cell - 1),
           mig_cell = as.factor(mig_cell),# %>% as.numeric(),
@@ -105,11 +102,11 @@ mod_gu <-
   ) 
 
 write_rds(mod_gu, file = glue("data/mod_gu_st{spe_thres}.rds"))
+# mod_gu <- read_rds(file = glue("data/mod_gu_st{spe_thres}.rds"))
 
 summary(mod_gu)
 
-# mod_gu <- readRDS(file = "data/res/mod_gu.rds")
-# saveRDS(mod_gu, file = "data/res/mod_gu.rds")
+# mod_gu <- readRDS(file = glue("data/mod_gu_st{spe_thres}.rds"))
 
 ## Figure 3a - speed and green-up date (model 1) --------------------------------------------------------
 svglite::svglite(glue("figures/Fig2/fig2_date.svg"), 
@@ -241,9 +238,8 @@ mod_lat_guspe <-
               s(year, bs = "re")
   )
 
-# mod_lat_guspe <- readRDS(file = "data/res/mod_lat_guspe.rds")
-# saveRDS(mod_lat_guspe, file = "data/res/mod_lat_guspe.rds")
-
+# mod_lat_guspe <- read_rds(file = glue("data/res/mod_lat_guspe_st{spe_thres}.rds"))
+# write_rds(mod_lat_guspe, file = glue("data/res/mod_lat_guspe_st{spe_thres}.rds"))
 summary(mod_lat_guspe)
 
 ## Figure 4a - speed and latitude (model 1 and 2) --------------------------------------------------------
@@ -285,11 +281,9 @@ legend(42.5, 295, legend=c("Green-up", "Bird"),
 dev.off()
 
 # Model 3 - Species traits --------------------------------------------------------
-hwicol <- read_csv("data/source/traits/birds_HWI.csv") %>% 
-  dplyr::select(species, `HWI`)  ## used the IUCN names
-final4 <- left_join(final2, hwicol, by="species") %>%
+final4 <- final2 %>%
   mutate(species = as.factor(species),
-         xi_mean = as.numeric(scale(xi_mean)), 
+         xi_mean = as.numeric(scale(sensi)), 
          ea_lat2 = ea_lat,
          ea_lat = as.numeric(scale(ea_lat)),
          Body_mass_g = as.numeric(scale(Body_mass_g)),
@@ -309,10 +303,9 @@ mod_tra <-
               s(species, bs = "re")
   )
 
-# mod_tra <- readRDS(file = "data/res/mod_tra.rds")
-# saveRDS(mod_tra, file = "data/res/mod_tra.rds")
-
+# mod_tra <- read_rds(file = glue("data/mod_tra_st{spe_thres}.rds"))
 summary(mod_tra)
+#write_rds(mod_tra, file = glue("data/mod_tra_st{spe_thres}.rds"))
 
 ### First arrival date plot ---------------------------------------------------------------------------------------------------------
 # fit lme4 model for plot 
@@ -383,9 +376,9 @@ dates[1] <- update(date2, year=2016, yday=ea_lat_tab$ea_lat2[1])
 
 base::as.Date("May 12, 2017", format = "%B %d, %Y")
 
-## Figure 5 - First arrival and bird speed (model 3) --------------------------------------------------------
+## Figure 5a - First arrival and bird speed (model 3) --------------------------------------------------------
 
-svglite::svglite(glue("figures/Fig5/fig5.svg"), 
+svglite::svglite(glue("figures/Fig5/fig5a.svg"), 
                  width = 4.6, height = 4.2)
 
 ggplot(aes(x = date, y = mean), data = ea_lat_tab) +
@@ -408,16 +401,97 @@ ggplot(aes(x = date, y = mean), data = ea_lat_tab) +
         axis.ticks = element_line(colour = "black", size = 0.35),
         rect = element_rect(fill = "transparent"),
         plot.title = element_text(hjust = 0.5)) +
-  scale_y_continuous(#trans='log10', 
-                     limits = c(5, 87),
-                     breaks = c(10,20,30,40,50,60,70,80), labels = c(10,20,30,40,50,60,70,80)
+  scale_y_continuous(trans='log10', 
+                     limits = c(10, 120),
+                     breaks = c(10, 25, 50, 75, 100, 150), 
+                     labels = c(10, 25, 50, 75, 100, 150)
                      ) +
   scale_x_date(#trans='log10', 
-    limits = as.Date(c("2016-03-15", "2016-05-5"),format="%Y-%m-%d")
+    limits = as.Date(c("2016-03-15", "2016-04-30"),format="%Y-%m-%d")
   ) +
   labs(y = "Bird speed (km/day, log scale) \n", x = "\n Calendar date") +
   ggtitle("First arrival date")
 
+dev.off()
+
+### Sensitivity plot ---------------------------------------------------------------------------------------------------------
+# fit lme4 model for plot - same as t2
+# data for prediction 
+newdata_d <- data.frame(ea_lat = rep(mean(final4$ea_lat, na.rm = T),3),
+                        xi_mean = c(final4$xi_mean %>% min(na.rm = T),
+                                   final4$xi_mean %>% mean(na.rm = T),
+                                   final4$xi_mean %>% max(na.rm = T)) %>% 
+                          as.numeric(),
+                        Body_mass_g = rep(mean(final4$Body_mass_g, na.rm = T),3),
+                        winlat = rep(mean(final4$winlat, na.rm = T),3),
+                        HWI = rep(mean(final4$HWI, na.rm = T),3),  
+                        cell_lat2 = rep(mean(final4$cell_lat2), 3))
+
+newdata_d$species <- 1
+newdata_d$year <- 1
+newdata_d$sps_cell <- 1
+
+predict(t2, newdata = newdata_d, re.form = NA, se.fit = TRUE)
+
+(p2 <- jtools::predict_merMod(t2, 
+                              newdata = newdata_d, 
+                              se.fit = TRUE, 
+                              iterms.type=2, 
+                              exclude = list("(1|year)","(1|cell_lat)","(1|sps_cell)"),
+                              re.form = NA
+))
+
+xi_mean_tab <- as.data.frame(matrix(ncol = 3,
+                                   data = c(exp(p2$fit), 
+                                            exp(p2$fit + (p2$se.fit*1.96)),
+                                            exp(p2$fit - p2$se.fit*1.96)),
+                                   byrow = F)) 
+
+colnames(xi_mean_tab) <- c("mean", "up","low")
+xi_mean_tab$xi_mean <- newdata_d$xi_mean
+xi_mean_tab$xi_mean2 <- xi_mean_tab$xi_mean * sd(final4$xi_mean, na.rm = T) + mean(final4$xi_mean, na.rm = T)
+
+xi_mean_tab <- as_tibble(xi_mean_tab)
+
+sensi_mean <- 0.131552
+sensi_sd <- 0.1263793
+sensi_labels <- round(c(-4, -2, 0, 2, 4) + sensi_mean * sensi_sd, 1)
+## Figure 5b - Sensitivity and bird speed (model 3) --------------------------------------------------------
+
+svglite::svglite(glue("figures/Fig5/fig5b.svg"), 
+                 width = 4.6, height = 4.2)
+
+ggplot(aes(x = xi_mean, y = mean), data = xi_mean_tab) +
+  geom_ribbon(aes(ymin=low, ymax=up), fill = "#CC79A7", alpha = 0.2,
+              position=position_dodge(.9), data = xi_mean_tab) +
+  geom_line(size = 1, col = "#CC79A7") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(colour = "black", size = 0.35),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        #axis.title.x = element_blank(),
+        #axis.title.y = element_blank(),
+        axis.text.y = element_text(angle=90, hjust=0.5, size = 12, colour = "black"),
+        axis.text.x = element_text(size = 12, colour = "black"),
+        axis.title.x = element_text(size = 11, colour = "black"),
+        legend.position = "none",
+        axis.ticks.length = unit(0.3, "cm"),
+        axis.ticks = element_line(colour = "black", size = 0.35),
+        rect = element_rect(fill = "transparent"),
+        plot.title = element_text(hjust = 0.5)) +
+  scale_y_continuous(trans='log10', 
+                     limits = c(5, 160),
+                     breaks = c(5, 10, 25, 50, 75, 100, 150), 
+                     labels = c(5, 10, 25, 50, 75, 100, 150)
+                     ) +
+  scale_x_continuous(limits = c(-4, 5),
+                     breaks = c(-4, -2, 0, 2, 4) , 
+                     labels = sensi_labels
+                     ) +
+  labs(y = "Bird speed (km/day, log scale) \n", x = "\n Sensitivity (arrival days/green-up day)") +
+  ggtitle("Bird sensitivity")
 dev.off()
 
 
@@ -575,7 +649,7 @@ ggplot(aes(x = time, y = mean), data = time_efftab) +
 
 ## Figure 2 - individual species speeds ----------------------------------
 ### species speeds histogram -------------------------
-ggplot(data = final4 %>% filter(species != "Pipilo_erythrophthalmus")) + # no estimates, no neighbors
+ggplot(data = final4) + # no estimates, no neighbors
   geom_boxplot(aes(x = reorder(species2,
                                 #xi_mean, 
                                 log(vArrMag),
@@ -612,7 +686,7 @@ ggplot(final2, aes(x = log(vArrMag))) +
         axis.title.y = element_blank())
 
 ### sensitivity squares ------------------------------------------------------------------------------------------------
-ggplot(data = final2 %>% filter(species != "Pipilo_erythrophthalmus")) +
+ggplot(data = final2) +
   geom_tile(aes(x = reorder(species2,log(vArrMag),FUN = median, na.rm = TRUE), 
                 y = 1, fill = xi_mean), width=0.5, alpha = 0.7) +
   theme_bw() +
@@ -631,7 +705,7 @@ ggplot(data = final2 %>% filter(species != "Pipilo_erythrophthalmus")) +
   labs(y = "Log(Speed)\n") 
 
 ### first arrival date squares -----------------------------------------------------------------------------------------------
-ggplot(data = final2 %>% filter(species != "Pipilo_erythrophthalmus")) +
+ggplot(data = final2) +
   geom_tile(aes(x = reorder(species2,log(vArrMag),FUN = median, na.rm = TRUE), 
                 y = 1, fill = ea_lat), width=0.5, alpha = 0.7) +
   theme_bw() +
@@ -650,7 +724,7 @@ ggplot(data = final2 %>% filter(species != "Pipilo_erythrophthalmus")) +
   labs(y = "Log(Speed)\n") 
 
 ### diet squares --------------------------------------------------------------------------------------------------
-ggplot(data = final2 %>% filter(species != "Pipilo_erythrophthalmus")) +
+ggplot(data = final2) +
   geom_tile(aes(x = reorder(species2,log(vArrMag),FUN = median, na.rm = TRUE), 
                 y = 1, fill = Diet), width=0.5, alpha = 0.7) +
   theme_bw() +
@@ -667,7 +741,7 @@ ggplot(data = final2 %>% filter(species != "Pipilo_erythrophthalmus")) +
   labs(y = "Log(Speed)\n") 
 
 ### body mass squares --------------------------------------------------------------------------------------------------
-ggplot(data = final2 %>% filter(species != "Pipilo_erythrophthalmus")) +
+ggplot(data = final2) +
   geom_tile(aes(x = reorder(species2,log(vArrMag),FUN = median, na.rm = TRUE), 
                 y = 1, fill = Body_mass_g), width=0.5, alpha = 0.7) +
   theme_bw() +
@@ -686,7 +760,7 @@ ggplot(data = final2 %>% filter(species != "Pipilo_erythrophthalmus")) +
   labs(y = "Log(Speed)\n") 
 
 ### wintering latitude squares -----------------------------------------------------------------------------------------------
-ggplot(data = final2 %>% filter(species != "Pipilo_erythrophthalmus")) +
+ggplot(data = final2 ) +
   geom_tile(aes(x = reorder(species2,log(vArrMag),FUN = median, na.rm = TRUE), 
                 y = 1, fill = winlat), width=0.5, alpha = 0.7) +
   theme_bw() +
@@ -705,7 +779,7 @@ ggplot(data = final2 %>% filter(species != "Pipilo_erythrophthalmus")) +
   labs(y = "Log(Speed)\n") 
 
 ### Migration distance squares -----------------------------------------------------------------------------------------------
-ggplot(data = final2 %>% filter(species != "Pipilo_erythrophthalmus")) +
+ggplot(data = final2) +
   geom_tile(aes(x = reorder(species2,log(vArrMag),FUN = median, na.rm = TRUE), 
                 y = 1, fill = Distance_m), width=0.5, alpha = 0.7) +
   theme_bw() +
@@ -724,7 +798,7 @@ ggplot(data = final2 %>% filter(species != "Pipilo_erythrophthalmus")) +
   labs(y = "Log(Speed)\n") 
 
 ### body mass squares --------------------------------------------------------------------------------------------------
-ggplot(data = final2 %>% filter(species != "Pipilo_erythrophthalmus")) +
+ggplot(data = final2) +
   geom_tile(aes(x = reorder(species2,log(vArrMag),FUN = median, na.rm = TRUE), 
                 y = 1, fill = HWI), width=0.5, alpha = 0.7) +
   theme_bw() +
@@ -762,7 +836,6 @@ final_lag1 <- final2 %>%
 spslist <- sort(unique(final_lag1$species))
 
 final_lag5 <- as.data.frame(matrix(NA, ncol = 4, nrow = 0))
-counter <- 0
 ## get species past speed
 for(s in 1:length(spslist)){
   final_lag2 <- final_lag1 %>% filter(species == spslist[s])
@@ -771,19 +844,23 @@ for(s in 1:length(spslist)){
     final_lag3 <- final_lag2 %>% filter(year == years[y])
     cellsLoop <- final_lag3 %>% dplyr::select(cell) %>% arrange() %>% distinct() %>% pull
     # get minimum cell and date for that year
-    date <- final_lag3 %>% dplyr::select(ea_lat) %>% pull() %>% first()
+    date <- final_lag3 %>% dplyr::select(ea_lat) %>% pull() %>% min()
     place <- final_lag3 %>% dplyr::select(cell_lat2, cell_lng) %>% arrange(cell_lat2) %>% filter(row_number()==1)
     for(d in 1:length(cellsLoop)){
       final_lag4 <- final_lag3 %>% filter(cell == cellsLoop[d])
       date2 <- final_lag4 %>% dplyr::select(arr_GAM_mean) %>% pull()
+      
       place2 <- final_lag4 %>% dplyr::select(cell_lat2, cell_lng) %>% filter(row_number()==1)
-      colnames(place2) <- colnames(place) <- c('latitude', 'longitude')
-      spe_bef <- (geodist::geodist(c(place2[1,2], place2[1,1]), c(place[1,2], place[1,1]), 
-                  measure = 'geodesic' )/1000)/(date2 - date)
-      if(spe_bef > 0) {final_lag5 <- rbind(final_lag5,
+      colnames(place2) <- colnames(place) <- c('lat', 'lon')
+      dist_a <- c(place2$lon[1], place2$lat[1])
+      dist_b <- c(place$lon[1], place$lat[1])
+      names(dist_a) <- names(dist_b) <- c('lon', 'lat')
+
+      spe_bef <- (distm(dist_a, dist_b, fun = distHaversine)/1000)/(date2-date)
+
+      if(!is.na(spe_bef) & spe_bef > 0 & spe_bef < 3000) {final_lag5 <- rbind(final_lag5,
                                             cbind(as.data.frame(spslist[s]), years[y], cellsLoop[d], spe_bef))
-                                            } else {print(glue("upa s <- {s}; y <-{y}; d <- {d}"))}
-      counter <- counter + 1
+                                            } else {print(glue("{spe_bef} s <- {s}; y <-{y}; d <- {d}"))}
     }
   }
 }
@@ -794,7 +871,7 @@ final_lag5$cell <- as.numeric(final_lag5$cell)
 final_lag5$past_spe <- as.numeric(final_lag5$past_spe)
 
 final_lag <- left_join(final_lag1, final_lag5, by = c("species", "year", "cell"))
-cellspec <- unique(final_lag[ ,c("cell","species")])
+cellspec <- unique(final_lag[ ,c("cell","species")]) %>% as_tibble()
 
 final3 <- matrix(NA, 0, (ncol(final_lag) + 3))
 
@@ -815,12 +892,62 @@ cor(final3$past_spe_z, final3$ea_lat_yr_z, use = "na.or.complete")
 cor(final3$past_spe_z, final3$gr_mn_z, use = "na.or.complete")
 cor(final3$gr_mn_z, final3$ea_lat_yr_z, use = "na.or.complete")
 
+final3_clean <- final3 %>%
+  filter(!is.na(AnomLag) & !is.na(past_spe_z) & !is.na(gr_mn_z) & !is.na(ea_lat_yr_z))
+
+mod_lag <- 
+  mgcv::gam(data = final3, 
+            AnomLag ~ past_spe_z + ea_lat_yr_z + gr_mn_z + 
+              s(species, bs = "re") +
+              s(sps_cell, bs = "re"))
+
+summary(mod_lag)
+
+(mean_ps <- mean(final3$past_spe, na.rm = T))
+(sd_ps <- sd(final3$past_spe, na.rm = T))
+(mean_ea <- mean(final3$ea_lat_yr, na.rm = T))
+(sd_ea <- sd(final3$ea_lat_yr, na.rm = T))
+(mean_gu <- mean(final3$gr_mn, na.rm = T))
+(sd_gu <- sd(final3$gr_mn, na.rm = T))
+
+
+# write_rds(mod_lag,    file = glue("data/mod_lag_st{spe_thres}.rds"))
+mod_lag2 <- read_rds(file = glue("data/mod_lag_st{spe_thres}.rds"))
+
+final3_clean <- final3 %>%
+  filter(!is.na(AnomLag) & !is.na(past_spe_z) & !is.na(gr_mn_z) & !is.na(ea_lat_yr_z))
+
+spe.part.all <- vegan::varpart(final3_clean$AnomLag, 
+                               final3_clean$past_spe_z, 
+                               final3_clean$gr_mn_z, 
+                               final3_clean$ea_lat_yr_z)
+spe.part.all$part
+plot(spe.part.all,
+     Xnames = c("Past speed", "Green up date", "Early arrival"), # name the partitions
+     bg = c("seagreen3", "mediumpurple", "lightblue"), alpha = 80, # colour the circles
+     digits = 2, # only show 2 digits
+     cex = 1)
+
 mod_lag <- 
   mgcv::gam(data = final3, 
             AnomLag ~ past_spe_z + ea_lat_yr_z + gr_mn_z + 
               s(species, bs = "re") +
               s(sps_cell, bs = "re")
   ) 
+summary(mod_lag)
+
+write_rds(mod_lag, file = glue("data/mod_lag_st{spe_thres}.rds"))
+# mod_lag <- read_rds(file = glue("data/mod_lag_st{spe_thres}.rds"))
+
+table(is.na(final3$ea_lat_yr_z))
+table(is.na(final3$AnomLag))
+plot(final3$AnomLag, final3$ea_lat_yr_z)
+
+ggplot(final3, aes(x = ea_lat_yr_z, y = AnomLag)) +
+  geom_point() +
+  geom_smooth(, 
+              method = "lm", col = "pink") +
+  ylim(-2,2)
 
 mod_lag_gu <- 
   mgcv::gam(data = final3, 
@@ -835,6 +962,14 @@ mod_lag_bi <-
               s(cell, bs = "re") +
               s(sps_cell, bs = "re")
   ) 
+
+mod_lag_ea <- 
+  mgcv::gam(data = final3, 
+            AnomLag ~ ea_lat_yr_z + 
+              s(cell, bs = "re") +
+              s(sps_cell, bs = "re")
+              )
+
 mod_lag_null <- 
   mgcv::gam(data = final3, 
             AnomLag ~ 1 + 
@@ -842,16 +977,20 @@ mod_lag_null <-
               s(sps_cell, bs = "re")
   ) 
 
-AIC(mod_lag, mod_lag_gu, mod_lag_null, mod_lag_bi)
-BIC(mod_lag, mod_lag_gu, mod_lag_null, mod_lag_bi)
+AIC(mod_lag, mod_lag_gu, mod_lag_null, mod_lag_bi, mod_lag_ea)
+BIC(mod_lag, mod_lag_gu, mod_lag_null, mod_lag_bi, mod_lag_ea)
 
-# saveRDS(mod_lag, file = "data/res/mod_lag.rds")
+# write_rds(mod_lag, file = "data/res/mod_lag.rds")
 # mod_lag <- readRDS(file = "data/res/mod_lag.rds")
 
 summary(mod_lag)
 
+quantile(final3$AnomLag, 0.95, na.rm = T)
+quantile(final3$AnomLag, 0.05, na.rm = T)
+
+
 ## Figure 4b - Anomaly on lag and z-score (model 4) ------------------------------------
-svglite::svglite(glue("figures/Fig3/fig3b.svg"), 
+svglite::svglite(glue("figures/Fig4/fig4b.svg"), 
                   width = 4, height = 3.8)
 # add a legend for each line on Inkscape
 ### bird past speed plot -----------------------------------------------------------------------
@@ -859,12 +998,12 @@ svglite::svglite(glue("figures/Fig3/fig3b.svg"),
 #     width = 4, height = 4)
 
 plot_smooth(mod_lag, view = "past_spe_z", 
-            ylim = c(-15,10), # xlab = "Bird past speed (z-score)",
+            ylim = c(-2,1.5), # xlab = "Bird past speed (z-score)",
+            xlim = c(-4,4),
             xlab = "Z-score",
             ylab = "Anomaly on Relative Arrival", col = "#CC79A7", 
             rug = F, lwd = 2, lty = 3, 
             rm.ranef = FALSE) 
-
 #dev.off()
 
 ### bird first arrival date plot -----------------------------------------------------------------------
@@ -888,7 +1027,7 @@ plot_smooth(mod_lag, view = "gr_mn_z",
             col = "#009E73", rug = F, lwd = 2, lty = 3, 
             rm.ranef = FALSE)
 
-legend(-3, 10, legend=c("Green-up date", "Bird speed prior to arrival", "Bird first arrival date"),
+legend(-0.5, -1, legend=c("Green-up date", "Bird speed prior to arrival", "Bird first arrival date"),
         col=c("#009E73", "#CC79A7","#56B4E9"), lty = 3, cex=0.6, lwd = 2)
 
 dev.off()
@@ -993,9 +1132,6 @@ cell_sdsV[round((nrow(cell_sdsV)/2),1),]
 
 ## data points for figure 3a - speed and green-up date (model 1) --------------------------------------------------------
 ## all data points and after highlight 5 species
-
-
-
 library(data.table)
 
 model_1 <- mod_gu
@@ -1261,8 +1397,6 @@ for(i in 1:length(sps)){
 
 }
 
-
-
 ## data points for figure 3b - speed and green-up speed (model 1) --------------------------------------------------------
 svglite::svglite(glue("figures/Fig2/fig2_speed.svg"), 
     width = 4, height = 4)
@@ -1406,3 +1540,22 @@ legend(-3, 10, legend=c("Green-up date", "Bird speed prior to arrival", "Bird fi
         col=c("#009E73", "#CC79A7","#56B4E9"), lty = 3, cex=0.6, lwd = 2)
 
 dev.off()
+
+
+## Table Sx
+tabsx <- final2  %>% 
+            select(species2, year, cell)  %>% 
+            mutate(year = 1) %>% 
+            group_by(species2, cell)  %>% 
+            mutate(n_years = sum(year))  %>% 
+            distinct() %>% 
+            select(-year) %>% 
+            arrange(cell) %>% 
+            #arrange(species2)  %>% 
+            pivot_wider(names_from = cell, 
+                        values_from = n_years)  %>% 
+            arrange(species2)
+
+dim(tabsx)
+colnames(tabsx)
+write_csv(tabsx, file = "figures/table_sX.csv")

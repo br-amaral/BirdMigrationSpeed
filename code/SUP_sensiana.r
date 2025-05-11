@@ -36,9 +36,12 @@ library(cowplot)
 # define maximum speed threshold
 spe_thres <- 3000
 # define number of simulations
-nsims <- 300
+nsims <- 500
 # define sps
-chose_sps <- "Passerina_caerulea"
+chose_sps <- "Vireo_olivaceus"
+#chose_sps <- "Tachycineta_bicolor"
+#chose_sps <- "Sayornis_phoebe"
+#chose_sps <- "Setophaga_pinus"
 
 ## file paths
 BIRDDATA_PATH <- glue("data/source/arrival_master_2020-07-21.csv")
@@ -157,6 +160,8 @@ velocity <- velocityB %>%
                        vArrMag = as.numeric(vArrMag),  # magnitude
                        vArrAng = as.numeric(vArrAng))  # angle
 
+write_rds(velocity, file = glue("data/res/simu_{chose_sps}.rds"))
+
 sort(table(velocity$cell), decreasing = TRUE)
 
 cell_numb <- sort(table(velocity$cell), decreasing = TRUE)[1] %>% 
@@ -184,70 +189,6 @@ speeds <- speed %>%
 
 velocityB <- left_join(velocityB, speeds, by = c("year", "cell", "species"))
 
-#  write_rds(velocityB, file = "data/simu_pace.rds")
-
-(plota <- 
-  velocityB %>% 
-    #filter(cell %in% cell_numb) %>% 
-    filter(!is.na(vArrMag) & !is.na(year) & !is.na(cell)) %>% 
-    ggplot() +
-      geom_density_ridges(aes(x = vArrMag, y = as.factor(year), 
-                              fill = as.factor(year)), 
-                          alpha = 0.7,
-                          jittered_points = TRUE,
-                          position = position_points_jitter(width = 0.05, height = 0),
-                          point_shape = '|', 
-                          point_size = 3, 
-                          point_alpha = 1,
-                          scale = 1) +
-      geom_segment(aes(x = qt05, xend = qt05, 
-                      y = as.numeric(year), 
-                      yend = as.numeric(year) + 0.8), 
-                  linetype = "solid", 
-                  color = "darkgrey",
-                  linewidth = 0.75) +
-      geom_segment(aes(x = qt95, xend = qt95, 
-                      y = as.numeric(year), 
-                      yend = as.numeric(year) + 0.8), 
-                  linetype = "solid", 
-                  color = "darkgrey",
-                  linewidth = 0.75) +
-      geom_segment(aes(x = mean_spe, xend = mean_spe, 
-                      y = as.numeric(year), 
-                      yend = as.numeric(year) + 0.8), 
-                  linetype = "solid", 
-                  color = "black",
-                  linewidth = 1) +
-      #! TODO: sample size of neighbours
-      theme_bw() +
-      labs(fill = "Year", color = "Year")
-)
-
-
-
-#! TODO: plot for species mean speed
-
-velocityB %>% 
-  #filter(cell %in% cell_numb) %>% 
-  group_by(simu) %>% 
-  mutate(simu_mean_spe = mean(vArrMag, na.rm = TRUE)) %>% 
-  ungroup() %>% 
-  mutate(qt05 = quantile(simu_mean_spe, probs = 0.05),
-         qt95 = quantile(simu_mean_spe, probs = 0.95),
-         mean_spe2 = mean(mean_spe, na.rm = T)) %>% 
-  ggplot() +
-    geom_histogram(aes(x = simu_mean_spe), alpha = 0.7, col = "gray") +
-    theme(legend.position = "none") +
-    geom_jitter(aes(x = simu_mean_spe, y = 0#, col = as.factor(simu)
-    ), 
-                width = 0.05, height = 0, 
-                shape = '|', size = 3, alpha = 1) +
-    theme(legend.position = "none") +
-    theme_bw() +
-      geom_vline(aes(xintercept = mean(mean_spe2)), col = "red") +
-      geom_vline(aes(xintercept = mean(qt05)), col = "black", linetype = "dashed") +
-      geom_vline(aes(xintercept = mean(qt95)), col = "black", linetype = "dashed") 
-
 # Calculate the mean speed and quantiles
 velocityB_summary <- velocityB %>% 
   group_by(simu) %>% 
@@ -274,8 +215,8 @@ qt_spe <- speeds  %>%
 
 velocityB_summary2 <- left_join(velocityB_summary, qt_spe, by = "year")
 
-#svglite::svglite(glue("figures/test_simu.svg"), 
-#                 width = 4.6, height = 4.2)
+svglite::svglite(glue("figures/simu{chose_sps}.svg"), 
+                 width = 8, height = 6)
 ggplot(velocityB_summary2) +
   geom_histogram(aes(x = simu_mean_spe), alpha = 0.7, col = "gray") +
   geom_jitter(aes(x = simu_mean_spe, y = 0, col = as.factor(simu)), 
@@ -285,6 +226,16 @@ ggplot(velocityB_summary2) +
   geom_vline(aes(xintercept = mean_spe), col = "red") +
   geom_vline(aes(xintercept = qt05), col = "black", linetype = "dashed") +
   geom_vline(aes(xintercept = qt95), col = "black", linetype = "dashed") +
-  theme(legend.position = "none") 
+  theme(legend.position = "none",
+        plot.title= element_text(hjust = 0.5, size = 14)) + 
+  ggtitle(glue("{nsims} simulations of {gsub('_',' ',chose_sps)}'s migration speed")) +
+  xlab("Bird migration speed (km/day)") +
+  ylab("Frequency")
   
-  #dev.off()
+dev.off()
+# hg <- httpgd::hgd()
+
+mean1 <- 0.14741
+sd1 <- 0.09180
+mean1 - (1.96*sd1)
+mean1 + (1.96*sd1)

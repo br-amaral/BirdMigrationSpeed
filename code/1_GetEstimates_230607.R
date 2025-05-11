@@ -277,11 +277,6 @@ for(i in 1:nrow(all)){
   }
 }
 
-for(i in 1:nrow(all)){
-  if(!is.na(all$vGrMag[i])) {
-    if(all$vGrMag[i] > spe_thres) {all$vGrMag[i] <- NA}
-  }
-}
 cellspec <- unique(all[ ,c("cell","species")])
 
 # subset of all data ----------------------------------------
