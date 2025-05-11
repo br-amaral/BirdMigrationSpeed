@@ -1,22 +1,18 @@
-## Code to import phenological mismatch data (results from Youngflesh et al 2021) and create tibbles 
-##   with bird and green-up velocity to run models in 3_ModelPlots.R
+#? *********************************************************************************
+#? -------------------------------   1_GetEstimates.R  -------------------------------
+#? *********************************************************************************
+# Code to import phenological mismatch data (results from Youngflesh et al 2021) and create tibbles 
+#    with bird and green-up velocity to run models in 3_ModelPlots.R
 #
-## Input:  data/source/arrival_master_2020-07-21.csv : bird arrival dates data
-#          data/source/MidGreenup_2020-08-06-forest.csv : green-up arrival dates data
+#! Input ----------------------------------------------
+#          - data/source/arrival_master_2020-07-21.csv : bird arrival dates data
+#          - data/source/MidGreenup_2020-08-06-forest.csv : green-up arrival dates data
 #
-## Output: data/velocityB.rds : tibble with calculated bird speeds
-#          data/velocityG.rds : tibble with calculated green-up speeds
-#
-#          data/cellaveB.rds : tibble with the coordinates for the velocity vectors for map for the birds
-#          data/cellaveG.rds : tibble with the coordinates for the velocity vectors for map for the green-up
-#
-#          data/birdgreen.rds : bird and green-up speed files merged (so there is some green-up here missing probs)
-#
-#          data/cellcoor.rds : x and y coordinates for all cells
-#          data/cellnumbs.rds : 
-#          data/cellnei.rds : 
-
-freshr::freshr()
+#! Output ---------------------------------------------
+#           - data/velocityB.rds : tibble with calculated bird speeds
+#           - data/birdgreen.rds : bird and green-up speed files merged (so there is some green-up here missing probs)
+#           - data/cellcoor.rds : x and y coordinates for all cells
+#           - data/cellnumbs.rds : tibble with cell numbers that start at 1
 
 # load packages --------------------------
 library(glue)
@@ -39,9 +35,6 @@ bird1 <- bird1[,-1]  ## remove weird first column
 greenup1 <- read_csv(GREENDATA_PATH) %>% 
   filter(gr_ncell > 10000)
 greenup1 <- greenup1[,-1]
-
-# define maximum speed threshold
-spe_thres <- 3000
 
 # cell number in a sequence that starts at 1
 tc <- sort(unique(greenup1$cell))
@@ -73,7 +66,7 @@ adj <- adj[num >= 0]
 cells <- as.tibble(cells)
 cells <- cells %>% 
   mutate(adj = adj,
-         numn = num)
+          numn = num)
 
 # calculate velocity for birds --------------------------
 velocityB <- data.frame(spec = c(), year = c(), cell = c(), N = c(), vArrMag = c(),vGrMag = c())
@@ -95,13 +88,12 @@ for (yr in min(bird$year):max(bird$year)){
           angle <- rad2deg(atan2(coef[1],coef[2]))
           if(angle < 0) {angle = angle + 360}
           velocityB <- rbind(velocityB,
-                             c(spec[spp],
-                               yr,
-                               as.numeric(cells[b,1]),
-                               sum(!is.na(dat.lm$arr_GAM_mean)),
-                               #as.numeric(sqrt((1/coef[1])^2+(1/coef[2])^2)),  # magnitude
-                               as.numeric(1/sqrt(sum(coef^2))),
-                               as.numeric(angle))                              # angle
+                              c(spec[spp],
+                                yr,
+                                as.numeric(cells[b,1]),
+                                sum(!is.na(dat.lm$arr_GAM_mean)),
+                                as.numeric(sqrt((1/coef[1])^2+(1/coef[2])^2)),  # magnitude
+                                as.numeric(angle))                              # angle
             )
           }
         }
@@ -147,7 +139,7 @@ preds3$cell <- cell_sps$cell
 for(i in 1:nrow(preds3)){
   pred_loop <- preds2 %>% 
     filter(species == preds3[i,1],
-           cell == preds3[i,2])
+            cell == preds3[i,2])
   
   if(nrow(pred_loop) == 1) {
     preds3$species[i] <- pred_loop$species
@@ -188,12 +180,11 @@ for(a in min(bird$year):max(bird$year)){
         angle <- rad2deg(atan2(coef[1],coef[2]))
         if(angle < 0) {angle = angle + 360}
         velocityG <- rbind(velocityG,
-                           c(a,
-                             as.numeric(cells[b,1]),
-                             as.numeric(sum(!is.na(dat.lm$gr_mn))),
-                             #as.numeric(sqrt((1/coef[1])^2+(1/coef[2])^2)),
-                             as.numeric(1/sqrt(sum(coef^2))),
-                             as.numeric(angle)))
+                            c(a,
+                              as.numeric(cells[b,1]),
+                              as.numeric(sum(!is.na(dat.lm$gr_mn))),
+                              as.numeric(sqrt((1/coef[1])^2+(1/coef[2])^2)),
+                              as.numeric(angle)))
       }
     }
   }
@@ -265,18 +256,23 @@ all$lag <- all$gr_mn - all$arr_GAM_mean
 
 all <- all %>% 
   mutate(NArr = as.numeric(NArr),
-         vArrMag = as.numeric(vArrMag),
-         vArrAng = as.numeric(vArrAng),
-         angB = as.numeric(angB),
-         angG = as.numeric(angG)) %>% 
+          vArrMag = as.numeric(vArrMag),
+          vArrAng = as.numeric(vArrAng),
+          angB = as.numeric(angB),
+          angG = as.numeric(angG)) %>% 
   dplyr::select(-c(VALID_GAM, arr_IAR_mean, arr_IAR_sd))
 
 for(i in 1:nrow(all)){
   if(!is.na(all$vArrMag[i])) {
-    if(all$vArrMag[i] > spe_thres) {all$vArrMag[i] <- NA}
+    if(all$vArrMag[i] > 3000) {all$vArrMag[i] <- NA}
   }
 }
 
+for(i in 1:nrow(all)){
+  if(!is.na(all$vGrMag[i])) {
+    if(all$vGrMag[i] > 3000) {all$vGrMag[i] <- NA}
+  }
+}
 cellspec <- unique(all[ ,c("cell","species")])
 
 # subset of all data ----------------------------------------
@@ -299,19 +295,12 @@ final2 <- final %>%
   as_tibble() %>% 
   mutate(
     cell_lat2 = cell_lat,
-    cell_lat = as.numeric(scale(cell_lat, scale = FALSE))  # centering lat for regression analysis
-  )
-# save output tibbles to run models
-## velocities of bird and green up
-write_rds(velocityB, file = glue("data/velocityB_st{spe_thres}.rds"))
-write_rds(velocityG, file = glue("data/velocityG_st{spe_thres}.rds"))
-## files with the coordinates for the velocity vectors for the map (all years together)
-write_rds(predsB, file = glue("data/cellaveB_st{spe_thres}.rds"))
-write_rds(predsG, file = glue("data/cellaveG_st{spe_thres}.rds"))
-## bird and green up velocity merged
-write_rds(final2, file = glue("data/birdgreen_st{spe_thres}.rds"))
-write_rds(cells %>% dplyr::select(cell, cell_lat, cell_lng), 
-          file = glue("data/cellcoor_st{spe_thres}.rds"))
-write_rds(cellnumbs, file = glue("data/cellnumbs_st{spe_thres}.rds"))
-write_rds(cells, file = glue("data/cellnei_st{spe_thres}.rds"))
+    cell_lat = scale(cell_lat, scale = FALSE))  # centering lat for regression analysis
 
+# save output tibbles to run models ---------------------------------
+# write_rds(velocityB, file = "data/velocityB.rds")
+# write_rds(final2, file = "data/birdgreen.rds")
+# write_rds(cells %>% dplyr::select(cell, cell_lat, cell_lng), file = "data/cellcoor.rds")
+# write_rds(cellnumbs, file = "data/cellnumbs.rds")
+
+cat("\n\n DONE!!! \n\n\n")

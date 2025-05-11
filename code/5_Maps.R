@@ -1,8 +1,27 @@
-####### make maps with migration speed and direction for species and green up ########
-# input files:
+#? *********************************************************************************
+#? ----------------------------------   5_Maps.R   ---------------------------------
+#? *********************************************************************************
+# Code to make maps with migration speed and direction for species and green up
+#
+#! Source ---------------------------------------------
+#           - code/map.R :
+#
+#! Input ----------------------------------------------
+#           - data/species_Grid.RData
+#           - data/master_cell_grid.rds
+#           - data/final.rds
+#           - data/source/spskey.csv
+#           - data/cell_grid_master.rds
+#
+#! Figures --------------------------------------------
+#           - figures/Fig1/fig1a_map.svg 
+#           - figures/Fig1/fig1b_map.svg
 
+# detach packages and clear workspace
+if(!require(freshr)){install.packages('freshr')}
+freshr::freshr()
 
-# load libraries ---------------------
+#! Load packages ---------------------------------------
 library(tidyverse)
 library(ggplot2)
 library(viridis)
@@ -11,24 +30,44 @@ library(glue)
 library(viridis)
 library(scales) # histogram
 
-# load data and source 'base' maps ----------------------
+conflicts_prefer(dplyr::select)
+conflicts_prefer(dplyr::filter)
+# conflicts_prefer(scales::alpha)
+
+#! Make functions --------------------------------------
+colanmes <- colnames
+lenght <- length
+`%!in%` <- Negate(`%in%`)
+
+#! Source code -----------------------------------------
+# source 'base' maps
 source("code/map.R")
 rm(list= ls()[!(ls() %in% c('rr', 'rrb', 'pp'))])
 
-load("data/species_Grid.RData")
-cell_grid_tab4 <- readRDS("~/Library/Mobile Documents/com~apple~CloudDocs/MigratorySensitivity//Data/master_cell_grid.rds") ## load grid - package not on CRAN
+#! Import data -----------------------------------------
+## file paths
+SPS_GRID_PATH  <- "data/species_Grid.RData"
+MAST_CELL_PATH <- "data/master_cell_grid.rds"
+FINAL_TIB_PATH <- "data/final.rds"
+SPS_KEY_PATH   <- "data/source/spskey.csv"
+CELL_GRID_PATH <- "data/cell_grid_master.rds"
 
-final2 <- readRDS("~/OneDrive/BirdMigrationSpeed_copy/final.rds") %>% 
+## read files
+load(SPS_GRID_PATH)  ## load an individual grid for every species
+
+cell_grid_tab4 <- readRDS(file = MAST_CELL_PATH) 
+
+final2 <- readRDS(file = FINAL_TIB_PATH) %>% 
   mutate(species = as.factor(species), 
-         cell = as.factor(cell),
-         #mig_cell = abs(mig_cell - 1),
-         mig_cell = as.factor(mig_cell),
-         sps_cell = as.factor(glue("{species}_{cell}"))) %>% 
+          cell = as.factor(cell),
+          #mig_cell = abs(mig_cell - 1),
+          mig_cell = as.factor(mig_cell),
+          sps_cell = as.factor(glue("{species}_{cell}"))) %>% 
   filter(!is.na(vArrMag))
 
-spskey <- read_csv("data/source/spskey.csv")
+spskey <- read_csv(file = SPS_KEY_PATH)
 
-cell_grid_master <- read_rds(file = "data/cell_grid_master.rds")
+cell_grid_master <- read_rds(file = CELL_GRID_PATH)
 
 # individual species velocity maps --------------------------------
 # no arrow
@@ -52,37 +91,32 @@ plot_mapvel2 <- function(sps, year, rang, pllot) {
     
     if(sps %in% spskey$sci_name) {
     cell_grid <- get(paste('cell_grid', 
-                           as.character(spskey[which(spskey$sci_name == sps),1]), 
-                           sep="_")) %>% 
+                            as.character(spskey[which(spskey$sci_name == sps),1]), 
+                            sep="_")) %>% 
       mutate(cell = as.factor(cell)) } else {
         cell_grid <- cell_grid_master %>% 
           mutate(cell = as.factor(cell))
       }
     
     cell_grid2 <- left_join(cell_grid, mean_cell_speed, by = c("cell"), relationship = "many-to-many")
-    
-    #MIN <- round((floor((min(cell_grid2$mag_s, na.rm = TRUE))*10)/10), 1)
-    #MAX <- round((ceiling((max(cell_grid2$mag_s, na.rm = TRUE))*10)/10), 1)
-    
-    # if(sps == "all") {
-    p_scale <- c(40, 50, 60, 70); p_limits <- c(32,71) #} else {
-    
-      #p_scale <- c(10, 25, 100,1000); p_limits <- c(1.96,7.27)}
+
+    p_scale <- c(40, 50, 60, 70); p_limits <- c(32,71) 
+
     if(pllot == 1) {
       return_plot <- 
       pp +
       geom_polygon(data = cell_grid2 %>% filter(mean_cell_speed > 0), 
-                   aes(x = long, 
+                    aes(x = long, 
                                           y = lat, group = group, 
                                           fill = mean_cell_speed), alpha = 0.7) +
       geom_path(data = cell_grid2 %>% filter(mean_cell_speed > 0), aes(x = long, 
-                                       y = lat, group = group), 
+                                        y = lat, group = group), 
               alpha = 0.4, color = 'black') +
       scale_fill_viridis(option="magma",
-                         #trans='log10', 
-                         limits = p_limits,
-                         breaks = p_scale,
-                         labels = p_scale) +
+                          #trans='log10', 
+                          limits = p_limits,
+                          breaks = p_scale,
+                          labels = p_scale) +
       theme(plot.margin=grid::unit(c(0,0,0,0), "mm"),
             panel.grid.major = element_line(color = alpha('black', 0.2), linewidth = 0.5),
             panel.ontop = TRUE,
@@ -111,7 +145,7 @@ plot_mapvel2 <- function(sps, year, rang, pllot) {
     
     preds2 <- preds2 %>% 
       filter(!is.na(cell_lat2),
-             !is.na(cell_lng)) %>% 
+              !is.na(cell_lng)) %>% 
       mutate(
         # x = (cell_lng + 10) * cos(ang * pi / 180),
         # y = (cell_lat + 10) * sin(ang * pi / 180)
@@ -147,7 +181,7 @@ plot_mapvel2 <- function(sps, year, rang, pllot) {
     
     preds4 <- preds3 %>% 
       filter(mag < 9999,
-             !is.na(year))
+              !is.na(year))
     
     cell_grid3 <- cell_grid2 %>% filter(mean_cell_speed > 0)
     cell_grid3$mean_cell_speed2 <- NA
@@ -155,17 +189,12 @@ plot_mapvel2 <- function(sps, year, rang, pllot) {
     return_plot <- 
     pp +
       geom_polygon(data = cell_grid3, 
-                   aes(x = long, 
+                    aes(x = long, 
                       y = lat, group = group), alpha = 0.3) +
       geom_path(data = cell_grid3,
                 aes(x = long, 
-                                       y = lat, group = group), 
+                    y = lat, group = group), 
                 alpha = 0.3, color = 'black') +
-      # scale_fill_viridis(option="magma",
-      #                    trans='log10', 
-      #                    limits = log(p_limits),
-      #                    breaks = log(p_scale),
-      #                    labels = p_scale) +
       theme_bw() +
       theme(
         panel.grid.major = element_line(color = alpha('black', 0.2),
@@ -184,11 +213,9 @@ plot_mapvel2 <- function(sps, year, rang, pllot) {
       geom_segment(data = preds4, aes(x = cell_lng, y = cell_lat, 
                                       xend = x, yend = y,
                                       group = cell),
-                   arrow = arrow(length = unit(0.175, "cm")), linewidth = 0.8) +
+                    arrow = arrow(length = unit(0.175, "cm")), linewidth = 0.8) +
       coord_map("ortho", orientation = c(35, -80, 0),
                 xlim = c(-95, -67), ylim = c(25, 50))  
-
-    
   }
   return(return_plot)
 }
@@ -207,4 +234,4 @@ plot_mapvel2(sps = "Setophaga_magnolia", year = "all", rang = "all", pllot = 1)
 plot_mapvel2(sps = "Setophaga_americana", year = "all", rang = "all", pllot = 1)
 plot_mapvel2(sps = "Setophaga_petechia", year = "all", rang = "all", pllot = 1)
 
-# develop species specific values for scale?
+cat("\n\n DONE!!! \n\n\n")
