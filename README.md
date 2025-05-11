@@ -232,7 +232,7 @@ This repository contains code to calculate bird migration and green-up speeds, f
 
 ### tables
 
-- [Table 1](tables/tab1.doc): Generalised additive models and their response variables, predictors, and results. Coefficient estimates and confidence intervals are shown for the linear fixed effects of the four models that investigated variation in bird migratory and green-up speed. For the random effects and smooth terms, we show how much variance they are explaining, as well as the residual variance estimate. Bold estimates indicate coefficient estimates with 95% confidence intervals that do not overlap zero in the fixed effects; for the non-linear and non-fixed effects, bold font indicates a p-value smaller than 0.05 in the likelihood ratio test that uses a reference distribution to test a null hypothesis (that the variance is 0) using the estimated degrees of freedom and maximum degrees of freedom for each term.
+- [Table 1](tables/tab1.csv): Generalised additive models and their response variables, predictors, and results. Coefficient estimates and confidence intervals are shown for the linear fixed effects of the four models that investigated variation in bird migratory and green-up speed. For the random effects and smooth terms, we show how much variance they are explaining, as well as the residual variance estimate. Bold estimates indicate coefficient estimates with 95% confidence intervals that do not overlap zero in the fixed effects; for the non-linear and non-fixed effects, bold font indicates a p-value smaller than 0.05 in the likelihood ratio test that uses a reference distribution to test a null hypothesis (that the variance is 0) using the estimated degrees of freedom and maximum degrees of freedom for each term.
 
 ### appendix
 

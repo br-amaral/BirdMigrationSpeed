@@ -1,0 +1,34 @@
+,,Linear fixed terms,,,,Smooth and random effects,,
+Model,Response,Coefficient,Estimate,Confidence intervals (95%),,Coefficient,Variance,Effect type
+Model 1,"Vegetation green-up speed (km/day, log scale)",Intercept,3.777,(3.636 : 3.917),,Latitude,0.076,Smooth (table-top)
+(n = 1301),,,,,,Year,0,Random
+,,,,,,,,intercept
+,,,,,,Cell Id,0.413,Random
+,,,,,,,,intercept
+,,,,,,Residual,0.094,
+,,,,,,Variance,,
+Model 2,"Bird migration speed (km/day, log scale)",Intercept,3.933,(3.868 : 3.996),,Latitude,0.182,Smooth (table-top)
+(n = 6418),,Green-up date anomaly,-0.549,(-0.770 : -0.327),,Year,0,Random intercept
+,,Green-up speed anomaly,0.088,(0.041 : 0.134),,Species_cell,0.282,Random
+,,,,,,,,intercept
+,,Migratory cell,0.13,(0.055 : 0.205),,Species,0.215,Random intercept
+,,Green-up date anomaly: Migratory cell [true],0.172,(-0.429 : 0.773),,Residual Variance,0.152,
+,,Green-up speed anomaly: Migratory cell [true],0.069,(-0.057 : 0.195),,,,
+Model 3,"Bird migration speed (km/day, log scale)",Intercept                 ,3.8023,(2.021 : 5.584),,Latitude,0.991,Smooth (table-top)
+(n = 4026),,Species sensitivity,0.119,(-0.034 : 0.203),,Year,0.036,Random
+,,,,,,,,intercept
+,,Species first arrival date,0.203,(0.110 : 0.295),,Species_cell,0.705,Random
+,,,,,,,,intercept
+,,Body mass,0.099,(-0.012 : 0.211),,Species,0.833,Random
+,,,,,,,,intercept
+,,Wintering latitude,0.098,(-0.022 : 0.217),,Residual,0.154,
+,,,,,,Variance,,
+,,Hand-wing index,0.147,(-0.032 : 0.327),,,,
+Model 4,Anomaly on bird relative arrival date,Intercept,-0.206,(-0.127 : -0.082),,Species_cell,0,Random
+(n =4909),,,,,,,,intercept
+,,Bird speed prior to arrival (z-score),0.023,(0.001 : 0.045),,Species,0.164,Random
+,,,,,,,,intercept
+,,Bird first-arrival,-0.033,(-0.053 : -0.014),,Residual Variance,0.405,
+,,(z-score),,,,,,
+,,Green-up date,0.454,(0.432 : 0.476),,,,
+,,(z-score),,,,,,
