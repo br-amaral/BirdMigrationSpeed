@@ -1,8 +1,15 @@
 # Predict how much a species speed will change with 1 sd of green-up date or speed
-mod_gu <- readRDS(file = "data/res/mod_gu.rds")
+# Load packages ---------------------------------------
+library(tidyverse)
+library(glue)
+library(mgcv)
+library(ggplot2)
+library(dplyr)
 
-final2 <- readRDS("~/OneDrive/BirdMigrationSpeed_copy/final.rds") %>% 
-  #"~/Library/CloudStorage/OneDrive-ThePennsylvaniaStateUniversity/BirdMigrationSpeed_copy/data/final.rds") %>% 
+spe_thres <- 3000
+mod_gu <- read_rds(file = glue("data/mod_gu_st{spe_thres}.rds"))
+
+final2 <- read_rds(file = glue("data/final_st{spe_thres}.rds")) %>% 
   mutate(species = as.factor(species), 
          cell = as.factor(cell),
          #mig_cell = abs(mig_cell - 1),
@@ -13,7 +20,7 @@ final2 <- readRDS("~/OneDrive/BirdMigrationSpeed_copy/final.rds") %>%
 ## Green-up date -------------------------------------------------------------------------------------------
 ### average species: Contopus_virens -----------------------------------------------------------------------
 #### early years -------------------------------------------------------------------------------------------
-new_data_early <- data.frame(AnomDGr = -10,
+new_data_early <- data.frame(AnomDGr = -0.5,
                              AnomVGr = 0,
                              mig_cell = c(TRUE,FALSE),
                              species = "Contopus_virens",
@@ -72,7 +79,7 @@ colnames(pred_ave_tab) <- c("mean", "up","low")
 pred_ave_tabX$mean %>% mean()
 
 #### late year -------------------------------------------------------------------------------------------
-new_data_late <- data.frame(AnomDGr = 5,
+new_data_late <- data.frame(AnomDGr = 0.5,
                             AnomVGr = 0,
                             mig_cell = c(TRUE,FALSE),
                             species = "Contopus_virens",
@@ -293,7 +300,7 @@ pred_late_tabX
 pred_ave_tabX
 pred_early_tabX
 
-## Green-up date -------------------------------------------------------------------------------------------
+## Green-up speed -------------------------------------------------------------------------------------------
 ### average species: Contopus_virens -----------------------------------------------------------------------
 #### fast years -------------------------------------------------------------------------------------------
 new_data_fast <- data.frame(AnomDGr = 0,
@@ -391,7 +398,7 @@ pred_fast_tabX
 
 # Summary results -------------------------
 # number of species
-final2 %>% filter(!is.na(vArrMag)) %>% dplyr::select(species) %>% 
+final2 %>% dplyr::select(species) %>% 
   distinct() %>% nrow()
 
 # number of cells

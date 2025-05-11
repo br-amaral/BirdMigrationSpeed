@@ -305,7 +305,7 @@ mod_tra <-
 
 # mod_tra <- read_rds(file = glue("data/mod_tra_st{spe_thres}.rds"))
 summary(mod_tra)
-#write_rds(mod_tra, file = glue("data/mod_tra_st{spe_thres}.rds"))
+write_rds(mod_tra, file = glue("data/mod_tra_st{spe_thres}.rds"))
 
 ### First arrival date plot ---------------------------------------------------------------------------------------------------------
 # fit lme4 model for plot 
@@ -376,9 +376,9 @@ dates[1] <- update(date2, year=2016, yday=ea_lat_tab$ea_lat2[1])
 
 base::as.Date("May 12, 2017", format = "%B %d, %Y")
 
-## Figure 5a - First arrival and bird speed (model 3) --------------------------------------------------------
+## Figure 5 - First arrival and bird speed (model 3) --------------------------------------------------------
 
-svglite::svglite(glue("figures/Fig5/fig5a.svg"), 
+svglite::svglite(glue("figures/Fig5/fig5.svg"), 
                  width = 4.6, height = 4.2)
 
 ggplot(aes(x = date, y = mean), data = ea_lat_tab) +
@@ -401,13 +401,12 @@ ggplot(aes(x = date, y = mean), data = ea_lat_tab) +
         axis.ticks = element_line(colour = "black", size = 0.35),
         rect = element_rect(fill = "transparent"),
         plot.title = element_text(hjust = 0.5)) +
-  scale_y_continuous(trans='log10', 
-                     limits = c(10, 120),
-                     breaks = c(10, 25, 50, 75, 100, 150), 
-                     labels = c(10, 25, 50, 75, 100, 150)
+  scale_y_continuous(#trans='log10', 
+                     limits = c(5, 87),
+                     breaks = c(10,20,30,40,50,60,70,80), labels = c(10,20,30,40,50,60,70,80)
                      ) +
   scale_x_date(#trans='log10', 
-    limits = as.Date(c("2016-03-15", "2016-04-30"),format="%Y-%m-%d")
+    limits = as.Date(c("2016-03-15", "2016-05-5"),format="%Y-%m-%d")
   ) +
   labs(y = "Bird speed (km/day, log scale) \n", x = "\n Calendar date") +
   ggtitle("First arrival date")
@@ -417,10 +416,10 @@ dev.off()
 ### Sensitivity plot ---------------------------------------------------------------------------------------------------------
 # fit lme4 model for plot - same as t2
 # data for prediction 
-newdata_d <- data.frame(ea_lat = rep(mean(final4$ea_lat, na.rm = T),3),
-                        xi_mean = c(final4$xi_mean %>% min(na.rm = T),
-                                   final4$xi_mean %>% mean(na.rm = T),
-                                   final4$xi_mean %>% max(na.rm = T)) %>% 
+newdata_d <- data.frame(xi_mean = rep(mean(final4$xi_mean, na.rm = T),3),
+                        ea_lat = c(final4$ea_lat %>% min(na.rm = T),
+                                   final4$ea_lat %>% mean(na.rm = T),
+                                   final4$ea_lat %>% max(na.rm = T)) %>% 
                           as.numeric(),
                         Body_mass_g = rep(mean(final4$Body_mass_g, na.rm = T),3),
                         winlat = rep(mean(final4$winlat, na.rm = T),3),
@@ -450,18 +449,33 @@ xi_mean_tab <- as.data.frame(matrix(ncol = 3,
 colnames(xi_mean_tab) <- c("mean", "up","low")
 xi_mean_tab$xi_mean <- newdata_d$xi_mean
 xi_mean_tab$xi_mean2 <- xi_mean_tab$xi_mean * sd(final4$xi_mean, na.rm = T) + mean(final4$xi_mean, na.rm = T)
+xi_mean_tab$sensi <- NA
 
 xi_mean_tab <- as_tibble(xi_mean_tab)
 
-sensi_mean <- 0.131552
-sensi_sd <- 0.1263793
-sensi_labels <- round(c(-4, -2, 0, 2, 4) + sensi_mean * sensi_sd, 1)
-## Figure 5b - Sensitivity and bird speed (model 3) --------------------------------------------------------
+date2 <- as.POSIXlt("2009-02-10")
 
-svglite::svglite(glue("figures/Fig5/fig5b.svg"), 
+xi_mean_tab <- xi_mean_tab %>% 
+  mutate(date = update(date2, year=2016, yday=xi_mean2 %>% round()) %>% 
+           as.Date(format = "%b %d") )
+as.Date(xi_mean_tab$date, "%d")
+vars <- format(as.Date(xi_mean_tab$date,format="%Y-%m-%d"), format = "%d") 
+vis <- month.abb[as.numeric(format(as.Date(xi_mean_tab$date,format="%Y-%m-%d"), format = "%m"))]
+
+xi_mean_tab$date2 <- format(paste(vars, vis, sep=" "), format = "%d %b")
+format(xi_mean_tab$date2, format = "%d %b")
+
+dates[1] <- update(date2, year=2016, yday=xi_mean_tab$xi_mean2[1]) 
+dates[1] <- update(date2, year=2016, yday=xi_mean_tab$xi_mean2[1]) 
+
+base::as.Date("May 12, 2017", format = "%B %d, %Y")
+
+## Figure 5 - First arrival and bird speed (model 3) --------------------------------------------------------
+
+svglite::svglite(glue("figures/Fig5/fig5.svg"), 
                  width = 4.6, height = 4.2)
 
-ggplot(aes(x = xi_mean, y = mean), data = xi_mean_tab) +
+ggplot(aes(x = date, y = mean), data = xi_mean_tab) +
   geom_ribbon(aes(ymin=low, ymax=up), fill = "#CC79A7", alpha = 0.2,
               position=position_dodge(.9), data = xi_mean_tab) +
   geom_line(size = 1, col = "#CC79A7") +
@@ -481,17 +495,16 @@ ggplot(aes(x = xi_mean, y = mean), data = xi_mean_tab) +
         axis.ticks = element_line(colour = "black", size = 0.35),
         rect = element_rect(fill = "transparent"),
         plot.title = element_text(hjust = 0.5)) +
-  scale_y_continuous(trans='log10', 
-                     limits = c(5, 160),
-                     breaks = c(5, 10, 25, 50, 75, 100, 150), 
-                     labels = c(5, 10, 25, 50, 75, 100, 150)
+  scale_y_continuous(#trans='log10', 
+                     limits = c(5, 87),
+                     breaks = c(10,20,30,40,50,60,70,80), labels = c(10,20,30,40,50,60,70,80)
                      ) +
-  scale_x_continuous(limits = c(-4, 5),
-                     breaks = c(-4, -2, 0, 2, 4) , 
-                     labels = sensi_labels
-                     ) +
-  labs(y = "Bird speed (km/day, log scale) \n", x = "\n Sensitivity (arrival days/green-up day)") +
-  ggtitle("Bird sensitivity")
+  scale_x_date(#trans='log10', 
+    limits = as.Date(c("2016-03-15", "2016-05-5"),format="%Y-%m-%d")
+  ) +
+  labs(y = "Bird speed (km/day, log scale) \n", x = "\n Calendar date") +
+  ggtitle("First arrival date")
+
 dev.off()
 
 
@@ -844,7 +857,7 @@ for(s in 1:length(spslist)){
     final_lag3 <- final_lag2 %>% filter(year == years[y])
     cellsLoop <- final_lag3 %>% dplyr::select(cell) %>% arrange() %>% distinct() %>% pull
     # get minimum cell and date for that year
-    date <- final_lag3 %>% dplyr::select(ea_lat) %>% pull() %>% min()
+    date <- final_lag3 %>% dplyr::select(ea_lat) %>% pull() %>% first()
     place <- final_lag3 %>% dplyr::select(cell_lat2, cell_lng) %>% arrange(cell_lat2) %>% filter(row_number()==1)
     for(d in 1:length(cellsLoop)){
       final_lag4 <- final_lag3 %>% filter(cell == cellsLoop[d])
@@ -854,9 +867,12 @@ for(s in 1:length(spslist)){
       colnames(place2) <- colnames(place) <- c('lat', 'lon')
       dist_a <- c(place2$lon[1], place2$lat[1])
       dist_b <- c(place$lon[1], place$lat[1])
-      names(dist_a) <- names(dist_b) <- c('lon', 'lat')
+       names(dist_a) <- names(dist_b) <- c('lon', 'lat') # RIGHT
+      # names(dist_a) <- names(dist_b) <- c('lat', 'lon') # WRONG
 
-      spe_bef <- (distm(dist_a, dist_b, fun = distHaversine)/1000)/(date2-date)
+    #   spe_bef <- (geodist::geodist(dist_a, dist_b, 
+    #               measure = 'geodesic' )/1000)/(date2 - date)
+      spe_bef <- (distm(c(place2$lon[1], place2$lat[1]), c(place$lon[1], place$lat[1]), fun = distHaversine)/1000)/(date2 - date)
 
       if(!is.na(spe_bef) & spe_bef > 0 & spe_bef < 3000) {final_lag5 <- rbind(final_lag5,
                                             cbind(as.data.frame(spslist[s]), years[y], cellsLoop[d], spe_bef))
@@ -903,16 +919,19 @@ mod_lag <-
 
 summary(mod_lag)
 
-(mean_ps <- mean(final3$past_spe, na.rm = T))
-(sd_ps <- sd(final3$past_spe, na.rm = T))
-(mean_ea <- mean(final3$ea_lat_yr, na.rm = T))
-(sd_ea <- sd(final3$ea_lat_yr, na.rm = T))
-(mean_gu <- mean(final3$gr_mn, na.rm = T))
-(sd_gu <- sd(final3$gr_mn, na.rm = T))
+(mean_ps <-  mean(final3_clean$past_spe))
+(sd_ps <- sd(final3_clean$past_spe))
+
+(mean_ea <-  mean(final3_clean$ea_lat_yr))
+(sd_ea <- sd(final3_clean$ea_lat_yr))
+
+(mean_gu <-  mean(final3_clean$gr_mn))
+(sd_gu <- sd(final3_clean$gr_mn))
 
 
-# write_rds(mod_lag,    file = glue("data/mod_lag_st{spe_thres}.rds"))
-mod_lag2 <- read_rds(file = glue("data/mod_lag_st{spe_thres}.rds"))
+summary(mod_lag)
+
+write_rds(mod_lag,    file = glue("data/mod_lag_st{spe_thres}.rds"))
 
 final3_clean <- final3 %>%
   filter(!is.na(AnomLag) & !is.na(past_spe_z) & !is.na(gr_mn_z) & !is.na(ea_lat_yr_z))
@@ -990,7 +1009,7 @@ quantile(final3$AnomLag, 0.05, na.rm = T)
 
 
 ## Figure 4b - Anomaly on lag and z-score (model 4) ------------------------------------
-svglite::svglite(glue("figures/Fig4/fig4b.svg"), 
+svglite::svglite(glue("figures/Fig3/fig3b.svg"), 
                   width = 4, height = 3.8)
 # add a legend for each line on Inkscape
 ### bird past speed plot -----------------------------------------------------------------------
@@ -999,7 +1018,7 @@ svglite::svglite(glue("figures/Fig4/fig4b.svg"),
 
 plot_smooth(mod_lag, view = "past_spe_z", 
             ylim = c(-2,1.5), # xlab = "Bird past speed (z-score)",
-            xlim = c(-4,4),
+            xlim = c(-4,3),
             xlab = "Z-score",
             ylab = "Anomaly on Relative Arrival", col = "#CC79A7", 
             rug = F, lwd = 2, lty = 3, 
@@ -1027,7 +1046,7 @@ plot_smooth(mod_lag, view = "gr_mn_z",
             col = "#009E73", rug = F, lwd = 2, lty = 3, 
             rm.ranef = FALSE)
 
-legend(-0.5, -1, legend=c("Green-up date", "Bird speed prior to arrival", "Bird first arrival date"),
+legend(0, -3, legend=c("Green-up date", "Bird speed prior to arrival", "Bird first arrival date"),
         col=c("#009E73", "#CC79A7","#56B4E9"), lty = 3, cex=0.6, lwd = 2)
 
 dev.off()

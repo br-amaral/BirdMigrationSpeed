@@ -1,0 +1,53 @@
+{
+    "terminal.integrated.persistentSessionReviveProcess": "onExitAndWindowClose"
+}
+
+{
+    "editor.quickSuggestions": {
+        "other": false,
+        "comments": false,
+        "strings": false
+        "sounds": false
+    }
+}
+
+{
+    "editor.quickSuggestions": {
+        "other": false,
+        "comments": false,
+        "strings": false,
+        "suggestions": false,
+        "sounds": false,
+        "inlineSuggest": false,
+        "copilot": false,
+        "editor.suggest.showKeywords": false,
+        "editor.acceptSuggestionOnEnter": false,
+        "GitHub.copilot.editor.enableCodeActions": false
+
+    }
+}
+
+{"editor.acceptSuggestionOnEnter": false,
+"GitHub.copilot.editor.enableCodeActions": false,
+"r.plot.useHttpgd": true,
+
+}
+
+{
+    "key": "cmd+shift+n",
+    "command": "type",
+    // "when": "editorLangId == r && editorTextFocus || editorLangId == rmd && editorTextFocus || terminalFocus",
+    "args": {"text": "%>% "}
+}
+{
+    "key": "cmd+shift+n",
+    "command": "type",
+    "when": "editorLangId == r && editorTextFocus || editorLangId == rmd && editorTextFocus || terminalFocus",
+    "args": {"text": "%>% "}
+}
+{
+    "key": "cmd+shift+n",
+    "command": "type",
+     "when": "editorLangId == r && terminalFocus",
+    "args": {"text": "%>% "}
+}
